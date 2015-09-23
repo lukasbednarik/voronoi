@@ -2,7 +2,7 @@
 #define EDGE_H
 
 #include "point.h"
-#include <memory>
+#include <utility>
 
 
 namespace Voronoi
@@ -11,20 +11,21 @@ namespace Voronoi
 	class Edge
 	{
 	public:
-		Edge();
 		Edge(const Point * left, const Point * right);
-		const Point * begin() const;
+		const Point * begin() const;   // TODO Az bude algoritmus fungovat, zmenit na vraceni hodnoty. std::pair lze po dukladnem odladeni take odstranit a vyhazovat jen vyjimku pro kontrolu, pokud uzivatel pozada o nenastavenou hodnotu.
 		const Point * end() const;
 		const Point * left() const;
 		const Point * right() const;
-		void setBegin(const Point * begin);
-		void setEnd(const Point * end);
-		void setLeft(const Point * left);
-		void setRight(const Point * right);
+		void setBegin(const Point & begin);
+		void setEnd(const Point & end);
+		bool operator<(const Edge & other) const;
+		bool operator==(const Edge & other) const;
+
+		Edge * neighbour;  ///< some edges consist of two parts, so we add the pointer to another part to connect them at the end of an algorithm
 
 	private:
-		const Point * _begin;  ///< Start of the edge
-		const Point * _end;    ///< End of the edge
+		std::pair<bool, Point> _begin;  ///< Start of the edge
+		std::pair<bool, Point> _end;    ///< End of the edge
 		const Point * _left;   ///< Each edge lies between two points, this is the left
 		const Point * _right;  ///< Each edge lies between two points, this is the right
 	};
@@ -33,18 +34,9 @@ namespace Voronoi
 
 // Implementation
 
-inline Voronoi::Edge::Edge() :
-	_begin(nullptr),
-	_end(nullptr),
-	_left(nullptr),
-	_right(nullptr)
-{
-}
-	
-
 inline Voronoi::Edge::Edge(const Point * left, const Point * right) :
-	_begin(nullptr),
-	_end(nullptr),
+	_begin(std::make_pair(false, Point())),
+	_end(std::make_pair(false, Point())),
 	_left(left),
 	_right(right)
 {
@@ -53,13 +45,23 @@ inline Voronoi::Edge::Edge(const Point * left, const Point * right) :
 
 inline const Voronoi::Point * Voronoi::Edge::begin() const
 {
-	return _begin;
+	if (_begin.first) {
+		return &_begin.second;
+	}
+	else {
+		return nullptr;
+	}
 }
 
 
 inline const Voronoi::Point * Voronoi::Edge::end() const
 {
-	return _end;
+	if (_end.first) {
+		return &_end.second;
+	}
+	else {
+		return nullptr;
+	}
 }
 
 
@@ -75,27 +77,33 @@ inline const Voronoi::Point * Voronoi::Edge::right() const
 }
 
 
-inline void Voronoi::Edge::setBegin(const Point * begin)
+inline void Voronoi::Edge::setBegin(const Point & begin)
 {
-	_begin = begin;
+	_begin = std::make_pair(true, begin);
 }
 
 
-inline void Voronoi::Edge::setEnd(const Point * end)
+inline void Voronoi::Edge::setEnd(const Point & end)
 {
-	_end = end;
+	_end = std::make_pair(true, end);
 }
 
 
-inline void Voronoi::Edge::setLeft(const Point * left)
+inline bool Voronoi::Edge::operator<(const Edge & other) const
 {
-	_left = left;
+	if (_begin != other._begin) {
+		return _begin < other._begin;
+	}
+	else {
+		return _end < other._end;
+	}
 }
 
 
-inline void Voronoi::Edge::setRight(const Point * right)
+inline bool Voronoi::Edge::operator==(const Edge & other) const
 {
-	_right = right;
+	return _begin == other._begin && _end == other._end;
 }
+
 
 #endif  // EDGE_H

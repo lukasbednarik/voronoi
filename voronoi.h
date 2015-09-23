@@ -6,7 +6,6 @@
 #include "beachline.h"
 #include <vector>
 #include <list>
-#include <utility>
 
 
 namespace Voronoi
@@ -20,7 +19,7 @@ namespace Voronoi
 		Generator(const std::vector<Point> & sites);
 
 		/// Return all edges of Voronoi diagram
-		std::vector<Voronoi::Edge> getEdges() const;
+		std::list<Voronoi::Edge> getEdges() const;
 
 		
 		// TODO get edges for one site function
@@ -29,17 +28,16 @@ namespace Voronoi
 
 
 	private:
-		typedef std::pair<std::unique_ptr<Event>, std::unique_ptr<Event>> CircleEventType;
-
 		std::vector<Point> _sites;   // Points for site event
-		std::list<Point> _vertices;  // Points for vertex event
-		std::vector<Edge> _edges;
+		std::list<Edge> _edges;
 		Beachline _beachline;
+		std::list<Event> _eventQueue;
+		std::list<Point> _tempVertex;  // Points for vertex event. TODO - tohle je problem, resime tim, ze nekdy Point nevlastnime, nekdy vlastnime...
 
-		void _findEdges();
-		CircleEventType _processSiteEvent(const Event * event);
-		CircleEventType  _processVertexEvent(Event * event);
-		std::unique_ptr<Event> _circleEvent(ParabolaNode * parabola, const double sweepline);
+		void _generate();
+		void _processSiteEvent(const Event * event);
+		void _processVertexEvent(Event * event);
+		void _circleEvent(ParabolaNode * parabola, const double sweepline);
 	};
 }
 

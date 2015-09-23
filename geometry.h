@@ -3,6 +3,7 @@
 
 #include "point.h"
 #include "edge.h"
+#include <memory>
 
 
 namespace Voronoi

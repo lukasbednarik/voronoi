@@ -29,6 +29,11 @@ namespace Voronoi
 
 		void disable();
 
+		Point circumcenter;  // TODO (muze byt null)
+
+		/// Sort by site->y() value
+		bool operator>(const Event & other) const;
+
 	private:
 		const Point * _site;
 		bool _isSiteEvent;
@@ -82,6 +87,12 @@ inline bool Voronoi::Event::isDisabled() const
 inline void Voronoi::Event::disable()
 {
 	_isDisabled = true;
+}
+
+
+inline bool Voronoi::Event::operator>(const Event & other) const
+{
+	return _site->y() > other.site()->y();
 }
 
 

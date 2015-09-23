@@ -8,6 +8,7 @@
 namespace Voronoi
 {
 	class Event;
+	class Edge;
 
 
 	/// One parabola node in a tree
@@ -29,8 +30,19 @@ namespace Voronoi
 		/// Set an event for this node
 		void setEvent(Event * event);
 
+		Edge * edge();
+		const Edge * edge() const;
+
+		void setEdge(Edge * edge);
+
 		ParabolaNode * leftSibling();
 		ParabolaNode * rightSibling();
+		const ParabolaNode * leftSibling() const;
+		const ParabolaNode * rightSibling() const;
+		const ParabolaNode * leftChild() const;
+		const ParabolaNode * rightChild() const;  // FOR DEBUG. WE WANT better implementation!
+		ParabolaNode * leftChild();
+		ParabolaNode * rightChild();  // FOR DEBUG. WE WANT better implementation!
 
 	private:
 		friend class Beachline;
@@ -42,6 +54,7 @@ namespace Voronoi
 		std::unique_ptr<ParabolaNode> _leftChild;
 		std::unique_ptr<ParabolaNode> _rightChild;
 		Event * _event;
+		Edge * _edge;
 
 		// Helper functions
 		void setLeftChild(std::unique_ptr<ParabolaNode> parabolaTree);
@@ -66,6 +79,10 @@ namespace Voronoi
 
 		/// Return a parabola under the given point [x, sweepline_y].
 		ParabolaNode * findParabola(const Point & point);
+
+		/// Get root
+		const ParabolaNode * root() const;
+		ParabolaNode * root();
 
 	private:
 		std::unique_ptr<ParabolaNode> _root;

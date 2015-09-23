@@ -1,11 +1,12 @@
 #include "voronoi.h"
 #include <iostream>
 
-
 // TODO PIMPL idiom
 // POZN Jiny algoritmus: Delaunay triangulation - flip edge algorithm.
 // POZN Jiny algoritmus: Half plane intersection (n*n*log(n)), sweepline má n*log(n).
 // TODO Beachline::emplaceParabola OSETRIT POKUD JE VICE PARABOL NA STEJNEM Y NA ZACATKU.
+
+
 
 
 int main (int argc, char **argv) 
@@ -14,23 +15,31 @@ int main (int argc, char **argv)
 	sites.emplace_back(0.1, 0.9);
 	sites.emplace_back(0.2, 0.7);
 	sites.emplace_back(0.3, 0.6);
-	//sites.emplace_back(0.8, 0.4);
-	//sites.emplace_back(0.4, 0.1);
-	//sites.emplace_back(0.9, 0.5);
-	//sites.emplace_back(0.4, 0.7);
+	sites.emplace_back(0.8, 0.4);
+	sites.emplace_back(0.4, 0.1);
+	sites.emplace_back(0.9, 0.5);
+	sites.emplace_back(0.4, 0.7);
 
 	Voronoi::Generator generator(sites);
-	std::vector<Voronoi::Edge> edges = generator.getEdges();
+	auto edges = generator.getEdges();
+
+	std::cout << "Edge count: " << edges.size() << std::endl;
 
 	for (const auto & edge : edges) {
 		auto begin = edge.begin();
 		auto end = edge.end();
 
 		if (begin) {
-		std::cout << "(" << begin->x() << ", " << begin->y() << ") -> ";
+			std::cout << "beg(" << begin->x() << ", " << begin->y() << ")";
+		}
+		if (begin && end) {
+			std::cout << " -> ";
+		}
+		else {
+			std::cout << std::endl;
 		}
 		if (end) {
-		std::cout << "(" << end->x() << ", " << end->y() << ")\n";
+			std::cout << "end(" << end->x() << ", " << end->y() << ")\n";
 		}
 	}
 
