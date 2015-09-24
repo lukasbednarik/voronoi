@@ -1,5 +1,7 @@
 #include "geometry.h"
 #include "make_unique.h"
+#include <algorithm>
+#include <cmath>
 
 
 namespace
@@ -80,7 +82,7 @@ std::unique_ptr<Voronoi::Point> Voronoi::Circumcenter(const Point & a, const Poi
 
 double Voronoi::CircumcircleRadius(const Point & a, const Point & b, const Point & c)
 {
-	auto norm = [] (const Point & p) -> double { return sqrt(p.x() * p.x() + p.y() * p.y()); };
+	auto norm = [] (const Point & p) -> double { return std::sqrt(p.x() * p.x() + p.y() * p.y()); };
 
 	// Compute side lengths
 	const double e = norm(a - b);
@@ -90,7 +92,7 @@ double Voronoi::CircumcircleRadius(const Point & a, const Point & b, const Point
 	// Use formula
 	const double s = (e + f + g) / 2;
 	double radius = e * f * g;
-	radius /= 4 * sqrt(s * (s - e) * (s - f) * (s - g));
+	radius /= 4 * std::sqrt(s * (s - e) * (s - f) * (s - g));
 	return radius;
 }
 
@@ -100,7 +102,7 @@ double Voronoi::CircleRadius(const Point & center, const Point & x)
 	const double dx = center.x() - x.x();
 	const double dy = center.y() - x.y();
 
-	return sqrt(dx * dx + dy * dy);
+	return std::sqrt(dx * dx + dy * dy);
 }
 
 

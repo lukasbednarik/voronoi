@@ -6,10 +6,13 @@
 // POZN Jiny algoritmus: Half plane intersection (n*n*log(n)), sweepline má n*log(n).
 // TODO Beachline::emplaceParabola OSETRIT POKUD JE VICE PARABOL NA STEJNEM Y NA ZACATKU.
 
+// Cmake a c++11? Cmake na windows? Executable or lib? Unit tests with qt or VS unittest++?
+// --- Udelal bych cmake a VS. Unit test na Windows only.
+// Jak se pro *.pro nastavi default src directory, aby tam nebyly to složky?
+// Je unittest++ i pro cmake?
 
 
-
-int main (int argc, char **argv) 
+int main (int, char *[])
 {
 	std::vector<Voronoi::Point> sites;  // center points on [0, 1] interval
 	sites.emplace_back(0.1, 0.9);
@@ -58,7 +61,7 @@ int main (int argc, char **argv)
 	*/
 
 
-	system("pause");
+	system("pause");  // Works on windows only
 	return 0;
 }
 

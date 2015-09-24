@@ -5,40 +5,6 @@
 #include <cassert>
 #include <functional>
 
-/*
-// FOR DEBUG ONLY
-#include <iostream>
-
-//  DEBUG ONLY
-void printParabola(const Voronoi::ParabolaNode * root)
-{
-	// Find left leaf
-	auto left = root;
-	while (!left->isLeaf()) {
-		left = left->leftChild();
-	}
-
-	if (left->leftSibling()) {
-		std::cout << "ERROR\n";
-	}
-
-	// print
-	auto next = left;
-	bool first = true;
-	while (next) {
-		if (!first) {
-			std::cout << " - ";
-		}
-		else {
-			first = false;
-		}
-		std::cout << "(" << next->site()->x() << "," << next->site()->y() << ")";
-		next = next->rightSibling();
-	}
-	std::cout << std::endl;
-
-}
-*/
 
 Voronoi::Generator::Generator(const std::vector<Point> & sites) :
 	_sites(sites)
@@ -163,8 +129,6 @@ void Voronoi::Generator::_processSiteEvent(const Event * event)
 	if (left && right) {
 		assert(left->site() == right->site());
 
-
-
 		// Create a new (dangling) edge
 		Point begin(event->site()->x(), getParabolaY(*left->site(), sweepline, event->site()->x()));
 		_edges.emplace_back(left->site(), event->site());
@@ -200,8 +164,6 @@ void Voronoi::Generator::_processVertexEvent(Event * event)
 	_edges.emplace_back(left->site(), right->site());
 	left->setEdge(&_edges.back());
 	left->edge()->setBegin(event->circumcenter);
-
-
 	
 	// Remove this parabola
 	_beachline.removeParabola(event->parabolaNode());
