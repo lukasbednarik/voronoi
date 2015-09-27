@@ -35,8 +35,8 @@ namespace Voronoi
 		std::list<Point> _tempVertex;  // Points for vertex event. TODO - tohle je problem, resime tim, ze nekdy Point nevlastnime, nekdy vlastnime...
 
 		void _generate();
-		void _processSiteEvent(const SiteEvent * event);
-		void _processVertexEvent(VertexEvent * event);
+		void _processEvent(const SiteEvent * event);
+		void _processEvent(VertexEvent * event);
 		void _circleEvent(ParabolaNode * parabola, const double sweepline);
 	};
 }

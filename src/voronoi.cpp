@@ -6,6 +6,14 @@
 #include <functional>
 
 
+namespace
+{
+	bool compareY(const std::unique_ptr<Voronoi::Event> & left, const std::unique_ptr<Voronoi::Event> & right)
+	{
+		return left->site()->y() > right->site()->y();
+	}
+}
+
 Voronoi::Generator::Generator(const std::vector<Point> & sites) :
 	_sites(sites)
 {	
@@ -24,10 +32,10 @@ std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 
 void Voronoi::Generator::_generate()
 {
-	_eventQueue.sort(std::greater<Event>());  // BUG ----- NEJDE KOMPILOVAT A JE POMALE
+	_eventQueue.sort(compareY);  // BUG ----- NEJDE KOMPILOVAT A JE POMALE!! Suboptimal na list!
 	for (auto it = _eventQueue.begin(); it != _eventQueue.end(); ++it) {
 		// Sort the queue
-		_eventQueue.sort(std::greater<Event>());  // TODO ??? Fungovalo by to i pro obracene serazeni?
+		_eventQueue.sort(compareY);
 
 		// Skip disabled event
 		if ((*it)->isDisabled()) {
@@ -37,11 +45,11 @@ void Voronoi::Generator::_generate()
 		// Process events
 		if ((*it)->isSiteEvent()) {
 			// Site event
-			_processSiteEvent(static_cast<SiteEvent *>(it->get()));
+			_processEvent(static_cast<SiteEvent *>(it->get()));
 		}
 		else {
 			// Vertex event
-			_processVertexEvent(static_cast<VertexEvent *>(it->get()));
+			_processEvent(static_cast<VertexEvent *>(it->get()));
 		}
 	}
 
@@ -134,12 +142,12 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	auto event = make_unique<VertexEvent>(&_tempVertex.back());
 	event->circumcenter = *circumcenter;
 	event->setParabolaNode(parabola);
-	parabola->setEvent(event.get());
+	parabola->setEvent(event.get());        // JENOM Kvuli tomuhle nemuze byt metoda konstantni. Pak nekonst i metody processEvent.
 	_eventQueue.push_back(std::move(event));
 }
 
 
-void Voronoi::Generator::_processSiteEvent(const SiteEvent * event)
+void Voronoi::Generator::_processEvent(const SiteEvent * event)
 {
 	auto newParabola = _beachline.emplaceParabola(event->site());
 	auto left = newParabola->leftSibling();
@@ -170,13 +178,12 @@ void Voronoi::Generator::_processSiteEvent(const SiteEvent * event)
 }
 
 
-void Voronoi::Generator::_processVertexEvent(VertexEvent * event)
+void Voronoi::Generator::_processEvent(VertexEvent * event)
 {
 	// Left and right always exists in vertex event
 	auto left = event->parabolaNode()->leftSibling();
 	auto right = event->parabolaNode()->rightSibling();
 
-	
 	// Finish edges
 	left->edge()->setEnd(event->circumcenter);
 	event->parabolaNode()->edge()->setEnd(event->circumcenter);
