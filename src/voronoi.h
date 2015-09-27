@@ -19,7 +19,7 @@ namespace Voronoi
 		Generator(const std::vector<Point> & sites);
 
 		/// Return all edges of Voronoi diagram
-		std::list<Voronoi::Edge> getEdges() const;
+		std::list<Edge> getEdges() const;
 
 		
 		// TODO get edges for one site function
@@ -31,12 +31,12 @@ namespace Voronoi
 		std::vector<Point> _sites;   // Points for site event
 		std::list<Edge> _edges;
 		Beachline _beachline;
-		std::list<Event> _eventQueue;
+		std::list<std::unique_ptr<Event>> _eventQueue;
 		std::list<Point> _tempVertex;  // Points for vertex event. TODO - tohle je problem, resime tim, ze nekdy Point nevlastnime, nekdy vlastnime...
 
 		void _generate();
-		void _processSiteEvent(const Event * event);
-		void _processVertexEvent(Event * event);
+		void _processSiteEvent(const SiteEvent * event);
+		void _processVertexEvent(VertexEvent * event);
 		void _circleEvent(ParabolaNode * parabola, const double sweepline);
 	};
 }

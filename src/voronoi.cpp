@@ -10,7 +10,7 @@ Voronoi::Generator::Generator(const std::vector<Point> & sites) :
 	_sites(sites)
 {	
 	for (const auto & site : _sites) {
-		_eventQueue.emplace_back(&site);
+		_eventQueue.push_back(make_unique<SiteEvent>(&site));
 	}
 	_generate();
 }
@@ -24,24 +24,24 @@ std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 
 void Voronoi::Generator::_generate()
 {
-	_eventQueue.sort(std::greater<Event>());
+	_eventQueue.sort(std::greater<Event>());  // BUG ----- NEJDE KOMPILOVAT A JE POMALE
 	for (auto it = _eventQueue.begin(); it != _eventQueue.end(); ++it) {
 		// Sort the queue
-		_eventQueue.sort(std::greater<Event>());  // TODO ??? Fungovalo by to i pro obracene serazeni? 
+		_eventQueue.sort(std::greater<Event>());  // TODO ??? Fungovalo by to i pro obracene serazeni?
 
 		// Skip disabled event
-		if (it->isDisabled()) {
+		if ((*it)->isDisabled()) {
 			continue;
 		}
 
 		// Process events
-		if (it->isSiteEvent()) {
+		if ((*it)->isSiteEvent()) {
 			// Site event
-			_processSiteEvent(&*it);
+			_processSiteEvent(static_cast<SiteEvent *>(it->get()));
 		}
 		else {
 			// Vertex event
-			_processVertexEvent(&*it);
+			_processVertexEvent(static_cast<VertexEvent *>(it->get()));
 		}
 	}
 
@@ -54,14 +54,18 @@ void Voronoi::Generator::_generate()
 
 
 
-	for (auto it = _eventQueue.begin(); it != _eventQueue.end(); ++it) {
-		// TODO Pokud je jen jeden bod (begin) a mimo -> smazat
-
-		//_eventQueue.erase(it--);
-
+	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
+		// If any edge has no end end the begin is out of range, delete it
+		if (!it->end()) {
+			const double x = it->begin()->x();
+			const double y = it->begin()->y();
+			if (x < minX || x > maxX || y < minY || y > maxY) {
+				_edges.erase(it--);
+			}
+		}
 	}
 
-
+	// Finish edges with no end
 	auto left = _beachline.root();
 	while (!left->isLeaf()) {
 		left = left->leftChild();
@@ -81,9 +85,26 @@ void Voronoi::Generator::_generate()
 		left = left->rightSibling();
 	}
 
+	// Crop the edge if it doesn't fit into the box
+	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
+		const double begX = it->begin()->x();
+		const double begY = it->begin()->y();
+		if (begX < minX) {
 
-	// TODO Osekat primky dle x, y
+		}
+		else if (begX > maxX) {
 
+		}
+		if (begY < minY) {
+
+		}
+		else if (begY > maxY){
+
+		}
+
+		// TODO the same for end
+
+	}
 
 }
 
@@ -110,15 +131,15 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 
 	// Create Vertex event
 	_tempVertex.emplace_back(circumcenter->x(), bottomCirclePoint);
-	_eventQueue.emplace_back(&_tempVertex.back(), false);
-	Event * event = &_eventQueue.back();
+	auto event = make_unique<VertexEvent>(&_tempVertex.back());
 	event->circumcenter = *circumcenter;
 	event->setParabolaNode(parabola);
-	parabola->setEvent(event);
+	parabola->setEvent(event.get());
+	_eventQueue.push_back(std::move(event));
 }
 
 
-void Voronoi::Generator::_processSiteEvent(const Event * event)
+void Voronoi::Generator::_processSiteEvent(const SiteEvent * event)
 {
 	auto newParabola = _beachline.emplaceParabola(event->site());
 	auto left = newParabola->leftSibling();
@@ -149,7 +170,7 @@ void Voronoi::Generator::_processSiteEvent(const Event * event)
 }
 
 
-void Voronoi::Generator::_processVertexEvent(Event * event)
+void Voronoi::Generator::_processVertexEvent(VertexEvent * event)
 {
 	// Left and right always exists in vertex event
 	auto left = event->parabolaNode()->leftSibling();

@@ -29,13 +29,13 @@ const Voronoi::Point * Voronoi::ParabolaNode::site() const
 }
 
 
-Voronoi::Event * Voronoi::ParabolaNode::event()
+Voronoi::VertexEvent * Voronoi::ParabolaNode::event()
 {
 	return _event;
 }
 
 
-void Voronoi::ParabolaNode::setEvent(Event * event)
+void Voronoi::ParabolaNode::setEvent(VertexEvent * event)
 {
 	_event = event;
 }

@@ -7,7 +7,7 @@
 
 namespace Voronoi
 {
-	class Event;
+	class VertexEvent;
 	class Edge;
 
 
@@ -25,10 +25,10 @@ namespace Voronoi
 		const Point * site() const;
 
 		/// Return event for this node
-		Event * event();
+		VertexEvent * event();
 
 		/// Set an event for this node
-		void setEvent(Event * event);
+		void setEvent(VertexEvent * event);
 
 		Edge * edge();
 		const Edge * edge() const;
@@ -53,7 +53,7 @@ namespace Voronoi
 		ParabolaNode * _rightSibling;
 		std::unique_ptr<ParabolaNode> _leftChild;
 		std::unique_ptr<ParabolaNode> _rightChild;
-		Event * _event;
+		VertexEvent * _event;
 		Edge * _edge;
 
 		// Helper functions

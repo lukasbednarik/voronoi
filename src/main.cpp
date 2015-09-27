@@ -10,6 +10,7 @@
 // --- Udelal bych cmake a VS. Unit test na Windows only.
 // Jak se pro *.pro nastavi default src directory, aby tam nebyly to složky?
 // Je unittest++ i pro cmake?
+// CMake umi generovat VS project.
 
 
 int main (int, char *[])
