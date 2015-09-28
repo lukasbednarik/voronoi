@@ -6,19 +6,12 @@
 #include <functional>
 
 
-namespace
-{
-	bool compareY(const std::unique_ptr<Voronoi::Event> & left, const std::unique_ptr<Voronoi::Event> & right)
-	{
-		return left->site()->y() > right->site()->y();
-	}
-}
-
 Voronoi::Generator::Generator(const std::vector<Point> & sites) :
-	_sites(sites)
+	_sites(sites),
+	_eventQueue(compareEvents)
 {	
 	for (const auto & site : _sites) {
-		_eventQueue.push_back(make_unique<SiteEvent>(&site));
+		_eventQueue.push(make_unique<SiteEvent>(&site));
 	}
 	_generate();
 }
@@ -32,25 +25,26 @@ std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 
 void Voronoi::Generator::_generate()
 {
-	_eventQueue.sort(compareY);  // BUG ----- NEJDE KOMPILOVAT A JE POMALE!! Suboptimal na list!
-	for (auto it = _eventQueue.begin(); it != _eventQueue.end(); ++it) {
-		// Sort the queue
-		_eventQueue.sort(compareY);
+	while (!_eventQueue.empty()) {
+		auto event = _eventQueue.top().get();
 
 		// Skip disabled event
-		if ((*it)->isDisabled()) {
+		if (event->isDisabled()) {
+			_eventQueue.pop();
 			continue;
 		}
 
 		// Process events
-		if ((*it)->isSiteEvent()) {
+		if (event->isSiteEvent()) {
 			// Site event
-			_processEvent(static_cast<SiteEvent *>(it->get()));
+			_processEvent(static_cast<SiteEvent *>(event));
 		}
 		else {
 			// Vertex event
-			_processEvent(static_cast<VertexEvent *>(it->get()));
+			_processEvent(static_cast<VertexEvent *>(event));
 		}
+
+		_eventQueue.pop();
 	}
 
 	// Finish edges
@@ -143,7 +137,7 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	event->circumcenter = *circumcenter;
 	event->setParabolaNode(parabola);
 	parabola->setEvent(event.get());        // JENOM Kvuli tomuhle nemuze byt metoda konstantni. Pak nekonst i metody processEvent.
-	_eventQueue.push_back(std::move(event));
+	_eventQueue.push(std::move(event));
 }
 
 
