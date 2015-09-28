@@ -6,7 +6,17 @@
 #include <string>
 
 
-Voronoi::ParabolaNode::ParabolaNode(const Point * site) :
+Voronoi::ParabolaNode::ParabolaNode() :
+	_parent(nullptr),
+	_leftSibling(nullptr),
+	_rightSibling(nullptr),
+	_event(nullptr),
+	_edge(nullptr)
+{
+}
+
+
+Voronoi::ParabolaNode::ParabolaNode(const Point & site) :
 	_site(site),
 	_parent(nullptr),
 	_leftSibling(nullptr),
@@ -23,7 +33,7 @@ bool Voronoi::ParabolaNode::isLeaf() const
 }
 
 
-const Voronoi::Point * Voronoi::ParabolaNode::site() const
+Voronoi::Point Voronoi::ParabolaNode::site() const
 {
 	return _site;
 }
@@ -41,21 +51,21 @@ void Voronoi::ParabolaNode::setEvent(VertexEvent * event)
 }
 
 
-Voronoi::Edge * Voronoi::ParabolaNode::edge()
-{
-	return _edge;
-}
-
-
-const Voronoi::Edge * Voronoi::ParabolaNode::edge() const
-{
-	return _edge;
-}
-
-
 void Voronoi::ParabolaNode::setEdge(Edge * edge)
 {
 	_edge = edge;
+}
+
+
+void Voronoi::ParabolaNode::setEdgeBegin(const Point & begin)
+{
+	_edge->setBegin(begin);
+}
+
+
+void Voronoi::ParabolaNode::setEdgeEnd(const Point & end)
+{
+	_edge->setEnd(end);
 }
 
 
@@ -150,18 +160,16 @@ void Voronoi::ParabolaNode::_cross(ParabolaNode * left, ParabolaNode * right)
 }
 
 
-Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
+Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 {
-	assert(site);
-
 	if (!_root) {
 		_root = make_unique<ParabolaNode>(site);
 		return _root.get();
 	}
 
-	ParabolaNode * parabola = findParabola(*site);
-	const Point * parabolaSite = parabola->site();
-	assert(parabolaSite->y() >= site->y());
+	ParabolaNode * parabola = findParabola(site);
+	const Point parabolaSite = parabola->site();
+	assert(parabolaSite.y() >= site.y());
 	assert(parabola->isLeaf());
 
 
@@ -174,9 +182,9 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 
 	// Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
 
-	if (site->x() < parabolaSite->x()) {
+	if (site.x() < parabolaSite.x()) {
 		parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));
-		parabola->setLeftChild(make_unique<ParabolaNode>(nullptr));
+		parabola->setLeftChild(make_unique<ParabolaNode>());
 		auto left = parabola->_leftChild.get();
 		left->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
 		left->setRightChild(make_unique<ParabolaNode>(site));
@@ -188,14 +196,14 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 		ParabolaNode::_cross(parabola->_rightChild.get(), parabola->_rightSibling);
 
 		// Set edge to right sibling from the original parabola
-		parabola->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		parabola->_rightChild->setEdge(parabola->_edge);  // the rightmost parabola
 		parabola->setEdge(nullptr);
 
 		return left->_rightChild.get();
 	}
 	else {
 		parabola->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
-		parabola->setRightChild(make_unique<ParabolaNode>(nullptr));
+		parabola->setRightChild(make_unique<ParabolaNode>());
 		auto right = parabola->_rightChild.get();
 		right->setRightChild(make_unique<ParabolaNode>(parabolaSite));
 		right->setLeftChild(make_unique<ParabolaNode>(site));
@@ -207,7 +215,7 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 		ParabolaNode::_cross(right->_rightChild.get(), parabola->_rightSibling);
 
 		// Set edge to right sibling from the original parabola
-		right->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		right->_rightChild->setEdge(parabola->_edge);  // the rightmost parabola
 		parabola->setEdge(nullptr);
 
 		return right->_leftChild.get();
@@ -295,7 +303,7 @@ Voronoi::ParabolaNode * Voronoi::Beachline::findParabola(const Point & point)
 
 
 		// "x" is the intersection of two parabolas
-		const double x = parabolaIntersectionX(*left->site(), *right->site(), point.y());
+		const double x = parabolaIntersectionX(left->site(), right->site(), point.y());
 		if (x > point.x()) {
 			parabola = parabola->_leftChild.get();
 		}

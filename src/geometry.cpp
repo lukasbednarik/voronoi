@@ -19,14 +19,14 @@ namespace
 std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, const Edge & right)
 {
 	// Suppose we have lines given by {(x_1, y_1), (x_2, y_2)} and {(x_3, y_3), (x_4, y_4)}.
-	const double x_1 = left.begin()->x();
-	const double y_1 = left.begin()->y();
-	const double x_2 = left.end()->x();
-	const double y_2 = left.end()->y();
-	const double x_3 = right.begin()->x();
-	const double y_3 = right.begin()->y();
-	const double x_4 = right.end()->x();
-	const double y_4 = right.end()->y();
+	const double x_1 = left.begin().x();
+	const double y_1 = left.begin().y();
+	const double x_2 = left.end().x();
+	const double y_2 = left.end().y();
+	const double x_3 = right.begin().x();
+	const double y_3 = right.begin().y();
+	const double x_4 = right.end().x();
+	const double y_4 = right.end().y();
 
 	const double denominator = (y_4 - y_3) * (x_2 - x_1) - (x_4 - x_3) * (y_2 - y_1);
 	const double numerator1 = (x_4 - x_3) * (y_1 - y_3) - (y_4 - y_3) * (x_1 - x_3);

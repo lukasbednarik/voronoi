@@ -7,7 +7,6 @@
 #include <vector>
 #include <list>
 #include <queue>
-#include <functional>
 
 
 namespace Voronoi
@@ -15,7 +14,7 @@ namespace Voronoi
 
 	static const auto compareEvents = [] (const std::unique_ptr<Event> & left, const std::unique_ptr<Event> & right) -> bool
 	{
-		return left->site()->y() < right->site()->y();
+		return left->site().y() < right->site().y();
 	};
 
 
@@ -37,11 +36,9 @@ namespace Voronoi
 
 
 	private:
-		std::vector<Point> _sites;   // Points for site event
 		std::list<Edge> _edges;
 		Beachline _beachline;
 		std::priority_queue<std::unique_ptr<Event>, std::vector<std::unique_ptr<Event>>, decltype(compareEvents)> _eventQueue;
-		std::list<Point> _tempVertex;  // Points for vertex event. TODO - tohle je problem, resime tim, ze nekdy Point nevlastnime, nekdy vlastnime...
 
 		void _generate();
 		void _processEvent(const SiteEvent * event);

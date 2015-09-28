@@ -15,14 +15,17 @@ namespace Voronoi
 	class ParabolaNode
 	{
 	public:
+		/// Default constructor
+		ParabolaNode();
+
 		/// Constructor
-		ParabolaNode(const Point * site);
+		ParabolaNode(const Point & site);
 
 		/// Return true if this is a leaf.
 		bool isLeaf() const;
 
 		/// The parabola focus. Value is valid only for leafs.
-		const Point * site() const;
+		Point site() const;
 
 		/// Return event for this node
 		VertexEvent * event();
@@ -30,10 +33,10 @@ namespace Voronoi
 		/// Set an event for this node
 		void setEvent(VertexEvent * event);
 
-		Edge * edge();
-		const Edge * edge() const;
-
 		void setEdge(Edge * edge);
+		void setEdgeBegin(const Point & begin);
+		void setEdgeEnd(const Point & end);
+		const Edge * edge() const { return _edge; }  // TODO This is for debug only.
 
 		ParabolaNode * leftSibling();
 		ParabolaNode * rightSibling();
@@ -47,7 +50,7 @@ namespace Voronoi
 	private:
 		friend class Beachline;
 
-		const Point * _site;
+		Point _site;
 		ParabolaNode * _parent;
 		ParabolaNode * _leftSibling;
 		ParabolaNode * _rightSibling;
@@ -72,7 +75,7 @@ namespace Voronoi
 		/// Construct a parabola (child) on beachline
 		///
 		/// @return New created parabola.
-		ParabolaNode * emplaceParabola(const Point * site);
+		ParabolaNode * emplaceParabola(const Point & site);
 
 		/// Remove this parabola (child) from the beachline
 		void removeParabola(ParabolaNode * parabolaNode);
