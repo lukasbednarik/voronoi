@@ -172,6 +172,7 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 	}
 
 
+	// Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
 
 	if (site->x() < parabolaSite->x()) {
 		parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));
@@ -185,6 +186,11 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 		ParabolaNode::_cross(left->_leftChild.get(), left->_rightChild.get());
 		ParabolaNode::_cross(left->_rightChild.get(), parabola->_rightChild.get());
 		ParabolaNode::_cross(parabola->_rightChild.get(), parabola->_rightSibling);
+
+		// Set edge to right sibling from the original parabola
+		parabola->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		parabola->setEdge(nullptr);
+
 		return left->_rightChild.get();
 	}
 	else {
@@ -199,6 +205,10 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point * site)
 		ParabolaNode::_cross(parabola->_leftChild.get(), right->_leftChild.get());
 		ParabolaNode::_cross(right->_leftChild.get(), right->_rightChild.get());
 		ParabolaNode::_cross(right->_rightChild.get(), parabola->_rightSibling);
+
+		// Set edge to right sibling from the original parabola
+		right->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		parabola->setEdge(nullptr);
 
 		return right->_leftChild.get();
 	}

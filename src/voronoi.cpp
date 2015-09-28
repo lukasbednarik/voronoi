@@ -55,18 +55,6 @@ void Voronoi::Generator::_generate()
 	const double offset = 10.0;
 
 
-
-	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
-		// If any edge has no end end the begin is out of range, delete it
-		if (!it->end()) {
-			const double x = it->begin()->x();
-			const double y = it->begin()->y();
-			if (x < minX || x > maxX || y < minY || y > maxY) {
-				_edges.erase(it--);
-			}
-		}
-	}
-
 	// Finish edges with no end
 	auto left = _beachline.root();
 	while (!left->isLeaf()) {
@@ -107,7 +95,7 @@ void Voronoi::Generator::_generate()
 		// TODO the same for end
 
 	}
-
+	
 }
 
 
@@ -136,7 +124,7 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	auto event = make_unique<VertexEvent>(&_tempVertex.back());
 	event->circumcenter = *circumcenter;
 	event->setParabolaNode(parabola);
-	parabola->setEvent(event.get());        // JENOM Kvuli tomuhle nemuze byt metoda konstantni. Pak nekonst i metody processEvent.
+	parabola->setEvent(event.get());        // JENOM Kvuli tomuhle nemuze byt metoda konstantni. Pak nekonst i metody processEvent. Presunout to do Parabola nebo Event!
 	_eventQueue.push(std::move(event));
 }
 
@@ -147,27 +135,36 @@ void Voronoi::Generator::_processEvent(const SiteEvent * event)
 	auto left = newParabola->leftSibling();
 	auto right = newParabola->rightSibling();
 
-	// Create a new edge
-	const double sweepline = event->site()->y();
-	if (left && right) {
-		assert(left->site() == right->site());
-
-		// Create a new (dangling) edge
-		Point begin(event->site()->x(), getParabolaY(*left->site(), sweepline, event->site()->x()));
-		_edges.emplace_back(left->site(), event->site());
-		_edges.back().setBegin(begin);
-		left->setEdge(&_edges.back());
+	if (!left && !right) {
+		return;
 	}
+	assert(left->site() == right->site());
+	const double sweepline = event->site()->y();
+
+	// Create a new (dangling) edge
+	Point begin(event->site()->x(), getParabolaY(*left->site(), sweepline, event->site()->x()));
+	_edges.emplace_back(left->site(), event->site());
+	_edges.back().setBegin(begin);
+	left->setEdge(&_edges.back());
+
+	_edges.emplace_back(event->site(), right->site());
+	_edges.back().setBegin(begin);
+	newParabola->setEdge(&_edges.back());  // TODO Toto je pripad kdy se edge muze skladat ze 2 casti! Obe casti nutno pozdeji propojit... Pointer na neighbour.
 	
+	// TODO Pokud se novy vrchol trefi presne mezi, muze byt problem. Nutno ukoncit edge... (symetricky k vertexEvent...)
+
 	// Check fircle event
 	if (left) {
 		_circleEvent(left, sweepline);
 	}
 	if (right) {
-		// Pokud left->site() == right->site(), nemusime tohle zkouset.
-		// Jediny problem nastane pokud se s novym vrcholem trefime presne na prusecik parabol.
 
-		//_circleEvent(right, sweepline);
+		if (left->leftSibling() && right->rightSibling() && left->leftSibling()->site() == right->rightSibling()->site()) {
+			return;
+		}
+
+		// Pokud left->leftSibling->site == right->rightSibling->site, prida se dvakrat event na stejne misto!. Check this! TODO
+		_circleEvent(right, sweepline);
 	}
 }
 
@@ -178,7 +175,7 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 	auto left = event->parabolaNode()->leftSibling();
 	auto right = event->parabolaNode()->rightSibling();
 
-	// Finish edges
+	// Finish two edges
 	left->edge()->setEnd(event->circumcenter);
 	event->parabolaNode()->edge()->setEnd(event->circumcenter);
 

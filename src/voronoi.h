@@ -13,7 +13,7 @@
 namespace Voronoi
 {
 
-	auto compareEvents = [] (const std::unique_ptr<Event> & left, const std::unique_ptr<Event> & right) -> bool
+	static const auto compareEvents = [] (const std::unique_ptr<Event> & left, const std::unique_ptr<Event> & right) -> bool
 	{
 		return left->site()->y() < right->site()->y();
 	};
