@@ -4,13 +4,16 @@
 // TODO PIMPL idiom
 // POZN Jiny algoritmus: Delaunay triangulation - flip edge algorithm.
 // POZN Jiny algoritmus: Half plane intersection (n*n*log(n)), sweepline má n*log(n).
-// TODO Beachline::emplaceParabola OSETRIT POKUD JE VICE PARABOL NA STEJNEM Y NA ZACATKU.
+// TODO Beachline::emplaceParabola testovat POKUD JE VICE PARABOL NA STEJNEM Y NA ZACATKU.
 
 // Cmake a c++11? Cmake na windows? Executable or lib? Unit tests with qt or VS unittest++?
 // --- Udelal bych cmake a VS. Unit test na Windows only.
 // Jak se pro *.pro nastavi default src directory, aby tam nebyly to složky?
 // Je unittest++ i pro cmake?
 // CMake umi generovat VS project.
+
+
+// KDE jsme skoncili?: Psat unit testy pro jednoduche pripady a ladit.
 
 
 int main (int, char *[])

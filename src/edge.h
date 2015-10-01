@@ -35,9 +35,9 @@ namespace Voronoi
 // Implementation
 
 inline Voronoi::Edge::Edge(const Point & left, const Point & right) :
+	neighbour(nullptr),
 	_left(left),
-	_right(right),
-	neighbour(nullptr)
+	_right(right)
 {
 }
 

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.1)
 project(VoronoiTest)
 
+# For cmake 3.1+ use
+# set_property(TARGET tgt PROPERTY CXX_STANDARD 11)
+# instead of
+set(CMAKE_CXX_FLAGS "-std=c++0x")
+
 # Create UnitTest++ library
 ## Get the main sources
 file(GLOB headers_ RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} unittest-cpp/UnitTest++/*.h)
@@ -22,22 +27,7 @@ source_group(${platformDir_} FILES ${platformHeaders_} ${platformSources_})
 ## Create the lib
 add_library(UnitTest++ STATIC ${headers_} ${sources_} ${platformHeaders_} ${platformSources_})
 
-# Build test runner for UnitTest++
-file(GLOB TEST_SRCS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} unittest-cpp/tests/*.cpp unittest-cpp/tests/*.h)
-source_group( "" FILES ${TEST_SRCS})
-add_executable(TestUnitTest++ ${TEST_SRCS})
-include_directories(unittest-cpp)
-
-target_link_libraries(TestUnitTest++ UnitTest++)
-
-## Run unit tests as post build step
-add_custom_command(TARGET TestUnitTest++
-	POST_BUILD COMMAND TestUnitTest++
-	COMMENT "Testing UnitTest++ library")
-
 # Build the voronoi lib
-
-set(CMAKE_CXX_FLAGS "-std=c++0x")
 
 ## Get the main sources
 file(GLOB headersVoronoi_ RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ../src/*.h)
@@ -46,7 +36,6 @@ source_group("" FILES ${headersVoronoi_} ${sourcesVoronoi_})
 
 ## Create the lib
 add_library(Voronoi STATIC ${headersVoronoi_} ${sourcesVoronoi_})
-
 
 # Build the test runner for Voronoi
 
