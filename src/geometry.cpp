@@ -6,13 +6,13 @@
 
 namespace
 {
-	const double EpsilonRad = 1e-10;
+const double EpsilonRad = 1e-10;
 
-	/// Return true if a given angle in rad is zero
-	inline bool IsZeroAngle(double angle)
-	{
-		return angle < EpsilonRad && -angle < EpsilonRad;
-	}
+/// Return true if a given angle in rad is zero
+inline bool IsZeroAngle(double angle)
+{
+	return angle < EpsilonRad && -angle < EpsilonRad;
+}
 }
 
 
@@ -133,11 +133,14 @@ double Voronoi::parabolaIntersectionX(const Point & p, const Point & r, double y
 	const double x1 = (-b + std::sqrt(disc)) / (2*a);
 	const double x2 = (-b - std::sqrt(disc)) / (2*a);
 
-	if (p.y() < r.y()) {
-		return std::max(x1, x2);
+	if (x1 > y) {
+		return x1;
+	}
+	else if (x2 > y) {
+		return x2;
 	}
 	else {
-		return std::min(x1, x2);
+		throw;
 	}
 }
 

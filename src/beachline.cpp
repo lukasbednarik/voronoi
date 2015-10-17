@@ -297,10 +297,7 @@ Voronoi::ParabolaNode * Voronoi::Beachline::findParabola(const Point & point)
 
 		// Find the closest leave which is on the right of current node
 		const ParabolaNode * right = parabola->rightChild();
-		while (!right->isLeaf()) right = right->rightChild();
-
-
-
+		while (!right->isLeaf()) right = right->leftChild();
 
 		// "x" is the intersection of two parabolas
 		const double x = parabolaIntersectionX(left->site(), right->site(), point.y());
