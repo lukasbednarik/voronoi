@@ -19,7 +19,7 @@ QVERIFY( \
 namespace
 {
 /// Simple debug function to print all edges for gnuplot
-void printEdgesGnuplot(const std::vector<Voronoi::Edge> & edges)
+void printEdgesGnuplot(const std::list<Voronoi::Edge> & edges)
 {
 	std::cout << "# Edge count: " << edges.size() << std::endl;
 	for (const auto & edge : edges) {
@@ -33,7 +33,7 @@ void printEdgesGnuplot(const std::vector<Voronoi::Edge> & edges)
 
 
 /// Simple debug function to print all edges for the user
-void printEdgesUser(const std::vector<Voronoi::Edge> & edges)
+void printEdgesUser(const std::list<Voronoi::Edge> & edges)
 {
 	std::cout << "# Edge count: " << edges.size() << std::endl;
 	for (const auto & edge : edges) {
@@ -45,17 +45,6 @@ void printEdgesUser(const std::vector<Voronoi::Edge> & edges)
 	}
 }
 }  // end of anonymous namespace
-
-
-void VoronoiTest::geometry_parabolaIntersectionX()
-{
-	Voronoi::Point first(1.0, 1.4);
-	Voronoi::Point second(1.1, 1.8);
-	double y = -1.1;
-	double x_1 = Voronoi::parabolaIntersectionX(first, second, y);
-	double x_2 = Voronoi::parabolaIntersectionX(second, first, y);
-	QCOMPARE(x_1, x_2);
-}
 
 
 void VoronoiTest::toUpper_data()
@@ -96,6 +85,17 @@ void VoronoiTest::toUpper_data()
 //	const Voronoi::Point e_3(0.45, 0.45);
 //	const size_t c_3 = 3;
 //	QTest::newRow("Test C") << s_3 << c_3 << b_3 << e_3;
+
+	// Test E
+//	std::vector<Voronoi::Point> s_5;
+//	s_5.emplace_back(0.2, 0.7);
+//	s_5.emplace_back(0.2, 0.2);
+//	s_5.emplace_back(0.4, 0.1);
+//	s_5.emplace_back(0.9, 0.7);
+//	const Voronoi::Point b_5(0.0, 0.45);  // TODO Nejni to spravna hodnota
+//	const Voronoi::Point e_5(0.45, 0.45);  // TODO Nejni to spravna hodnota
+//	const size_t c_5 = 5;
+//	QTest::newRow("Test E") << s_5 << c_5 << b_5 << e_5;
 }
 
 
@@ -110,6 +110,8 @@ void VoronoiTest::toUpper()
 	auto edges = generator.getEdges();
 	edges.sort();
 	auto it = edges.cbegin();
+
+	printEdgesUser(edges);
 
 	QCOMPARE(edges.size(), edgeCount);
 	//COMPARE(it->begin(), begin);  // vraci spatne [0.3, 0.4]

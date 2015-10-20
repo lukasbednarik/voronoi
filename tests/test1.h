@@ -34,8 +34,6 @@ class VoronoiTest: public QObject
 	Q_OBJECT
 
 private slots:
-	void geometry_parabolaIntersectionX();
-
 	void toUpper_data();
 	void toUpper();
 };

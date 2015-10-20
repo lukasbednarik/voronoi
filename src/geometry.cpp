@@ -133,14 +133,13 @@ double Voronoi::parabolaIntersectionX(const Point & p, const Point & r, double y
 	const double x1 = (-b + std::sqrt(disc)) / (2*a);
 	const double x2 = (-b - std::sqrt(disc)) / (2*a);
 
-	if (x1 > y) {
-		return x1;
-	}
-	else if (x2 > y) {
-		return x2;
+	// Suppose parabola "p" is on the left.
+	// Check if the line will go up or down and decide which value to return.
+	if (p.y() < r.y()) {
+		return std::max(x1, x2);
 	}
 	else {
-		throw;
+		return std::min(x1, x2);
 	}
 }
 

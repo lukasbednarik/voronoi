@@ -18,4 +18,3 @@ else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../src/debug/ -lvor
 else:unix: LIBS += -L$$OUT_PWD/../src/ -lvoronoi
 
 INCLUDEPATH += $$PWD/../src
-DEPENDPATH += $$PWD/../src
