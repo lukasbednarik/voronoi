@@ -35,6 +35,7 @@ class VoronoiTest: public QObject
 
 private slots:
 	void toUpper_data();
+	void circumcenter();
 	void toUpper();
 };
 

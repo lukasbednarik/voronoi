@@ -2,6 +2,7 @@
 #include "make_unique.h"
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 
 
 namespace
@@ -108,6 +109,8 @@ double Voronoi::CircleRadius(const Point & center, const Point & x)
 
 double Voronoi::parabolaIntersectionX(const Point & p, const Point & r, double y)
 {
+	assert(p != r); // if true, then b1 != b2 which imply b != 0
+
 	// Coefficients of the first parabola
 	// a1 * x * x + b1 * x + c1 = 0
 	const double dp1 = 2.0 * (p.y() - y);
@@ -126,6 +129,11 @@ double Voronoi::parabolaIntersectionX(const Point & p, const Point & r, double y
 	const double a = a1 - a2;
 	const double b = b1 - b2;
 	const double c = c1 - c2;
+
+	// Degenerate cast
+	if (a == 0) {
+		return -c / b;
+	}
 
 	// Solve a quadratic equation when the difference of two parabolas is zero.
 	// This is when the two parabolas intersects.

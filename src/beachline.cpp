@@ -173,6 +173,27 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 	assert(parabola->isLeaf());
 
 
+	// Handle special case when: one_parabola_in_root && parabolaSite.y() == site.y()
+	if (_root->isLeaf() && parabolaSite.y() == site.y()) {
+		if (site.x() < parabolaSite.x()) {
+			parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));
+			parabola->setLeftChild(make_unique<ParabolaNode>(site));
+
+			// Set siblings
+			ParabolaNode::_cross(parabola->_leftChild.get(), parabola->_rightChild.get());
+			return parabola->_leftChild.get();
+		}
+		else {
+			parabola->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
+			parabola->setRightChild(make_unique<ParabolaNode>(site));
+
+			// Set siblings
+			ParabolaNode::_cross(parabola->_leftChild.get(), parabola->_rightChild.get());
+			return parabola->_rightChild.get();
+		}
+	}
+	
+
 	// disable events
 	if (parabola->event()) {
 		parabola->event()->disable();

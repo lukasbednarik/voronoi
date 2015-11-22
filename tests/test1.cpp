@@ -56,15 +56,15 @@ void VoronoiTest::toUpper_data()
 
 	// TODO Replace with initializer list when supported
 	// Points are on [0, 1] interval
-
+	/*
 	// Test A
-//	std::vector<Voronoi::Point> s_1;
-//	s_1.emplace_back(0.2, 0.7);
-//	s_1.emplace_back(0.4, 0.1);
-//	const Voronoi::Point b_1(1.0, 0.633333);
-//	const Voronoi::Point e_1(0.0, 0.3);
-//	const size_t c_1 = 1;
-//	QTest::newRow("Test A") << s_1 << c_1 << b_1 << e_1;
+	std::vector<Voronoi::Point> s_1;
+	s_1.emplace_back(0.2, 0.7);
+	s_1.emplace_back(0.4, 0.1);
+	const Voronoi::Point b_1(0.0, 0.3);
+	const Voronoi::Point e_1(1.0, 0.633333);
+	const size_t c_1 = 1;
+	QTest::newRow("Test A") << s_1 << c_1 << b_1 << e_1;
 
 	// Test B
 	std::vector<Voronoi::Point> s_2;
@@ -77,25 +77,46 @@ void VoronoiTest::toUpper_data()
 	QTest::newRow("Test B") << s_2 << c_2 << b_2 << e_2;
 
 	// Test C
-//	std::vector<Voronoi::Point> s_3;
-//	s_3.emplace_back(0.2, 0.7);
-//	s_3.emplace_back(0.2, 0.2);
-//	s_3.emplace_back(0.4, 0.1);
-//	const Voronoi::Point b_3(0.0, 0.45);
-//	const Voronoi::Point e_3(0.45, 0.45);
-//	const size_t c_3 = 3;
-//	QTest::newRow("Test C") << s_3 << c_3 << b_3 << e_3;
-
+	std::vector<Voronoi::Point> s_3;
+	s_3.emplace_back(0.2, 0.7);
+	s_3.emplace_back(0.2, 0.2);
+	s_3.emplace_back(0.4, 0.1);
+	const Voronoi::Point b_3(0.225, 0);
+	const Voronoi::Point e_3(0.45, 0.45);
+	const size_t c_3 = 3;
+	QTest::newRow("Test C") << s_3 << c_3 << b_3 << e_3;
+	*/
 	// Test E
-//	std::vector<Voronoi::Point> s_5;
-//	s_5.emplace_back(0.2, 0.7);
-//	s_5.emplace_back(0.2, 0.2);
-//	s_5.emplace_back(0.4, 0.1);
-//	s_5.emplace_back(0.9, 0.7);
-//	const Voronoi::Point b_5(0.0, 0.45);  // TODO Nejni to spravna hodnota
-//	const Voronoi::Point e_5(0.45, 0.45);  // TODO Nejni to spravna hodnota
-//	const size_t c_5 = 5;
-//	QTest::newRow("Test E") << s_5 << c_5 << b_5 << e_5;
+	std::vector<Voronoi::Point> s_5;
+	s_5.emplace_back(0.2, 0.7);
+	s_5.emplace_back(0.2, 0.2);
+	s_5.emplace_back(0.4, 0.1);
+	s_5.emplace_back(0.9, 0.7);  // (0.9, 0.701) odstrani bug
+	const Voronoi::Point b_5(0.0, 0.45);  // TODO Nejni to spravna hodnota
+	const Voronoi::Point e_5(0.45, 0.45);  // TODO Nejni to spravna hodnota
+	const size_t c_5 = 5;
+	QTest::newRow("Test E") << s_5 << c_5 << b_5 << e_5;
+
+	// TODO Testovat i zrcadlovy pripad, kdy 
+	//s_5.emplace_back(0.2, 0.7);
+	//s_5.emplace_back(0.9, 0.2);
+	//s_5.emplace_back(0.6, 0.1);
+	//s_5.emplace_back(0.9, 0.7);
+}
+
+
+void VoronoiTest::circumcenter()
+{
+	Voronoi::Point a(0.2, 0.7);
+	Voronoi::Point b(0.2, 0.2);
+	Voronoi::Point c(0.4, 0.1);
+	auto p = Voronoi::Circumcenter(a, b, c);
+	auto r = Voronoi::Circumcenter(c, b, a);
+	auto s = Voronoi::Circumcenter(b, a, c);
+	auto t = Voronoi::Circumcenter(b, c, a);
+	COMPARE(Voronoi::Point(*p), Voronoi::Point(*r));
+	COMPARE(Voronoi::Point(*s), Voronoi::Point(*r));
+	COMPARE(Voronoi::Point(*t), Voronoi::Point(*r));
 }
 
 
@@ -114,8 +135,8 @@ void VoronoiTest::toUpper()
 	printEdgesUser(edges);
 
 	QCOMPARE(edges.size(), edgeCount);
-	//COMPARE(it->begin(), begin);  // vraci spatne [0.3, 0.4]
-	//COMPARE(it->end(), end);
+	COMPARE(it->begin(), begin);  // vraci spatne [0.3, 0.4]
+	COMPARE(it->end(), end);
 }
 
 
