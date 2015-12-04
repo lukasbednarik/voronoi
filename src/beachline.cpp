@@ -47,6 +47,9 @@ Voronoi::VertexEvent * Voronoi::ParabolaNode::event()
 
 void Voronoi::ParabolaNode::setEvent(VertexEvent * event)
 {
+	if (_event) {
+		_event->disable();
+	}
 	_event = event;
 }
 
@@ -194,10 +197,9 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 	}
 	
 
-	// disable events
+	// disable event including parabola->sites in the middle of a triple.    TODO: Is this correct? Are other events on neighbour parabolas intacted after move?
 	if (parabola->event()) {
-		parabola->event()->disable();
-		parabola->setEvent(nullptr);  // TODO Function Prabola::DisableEvent() ktery nastavi 2 veci.
+		parabola->setEvent(nullptr);
 	}
 
 
@@ -253,16 +255,14 @@ void Voronoi::Beachline::removeParabola(ParabolaNode * parabolaNode)
 	assert(parabolaNode->isLeaf());
 
 	// disable events
+	// Any event involving parabola->site should be deleted.          TODO: is this correct?
 	if (parabolaNode->_leftSibling && parabolaNode->_leftSibling->event()) {
-		parabolaNode->_leftSibling->event()->disable();
 		parabolaNode->_leftSibling->setEvent(nullptr);
 	}
 	if (parabolaNode->_rightSibling && parabolaNode->_rightSibling->event()) {
-		parabolaNode->_rightSibling->event()->disable();
 		parabolaNode->_rightSibling->setEvent(nullptr);
 	}
 	if (parabolaNode->event()) {
-		parabolaNode->event()->disable();
 		parabolaNode->setEvent(nullptr);
 	}
 
@@ -314,11 +314,15 @@ Voronoi::ParabolaNode * Voronoi::Beachline::findParabola(const Point & point)
 	while (!parabola->isLeaf()) {
 		// Find the closest leave which is on the left of current node
 		const ParabolaNode * left = parabola->leftChild();
-		while (!left->isLeaf()) left = left->rightChild();
+		while (!left->isLeaf()) {
+			left = left->rightChild();
+		}
 
 		// Find the closest leave which is on the right of current node
 		const ParabolaNode * right = parabola->rightChild();
-		while (!right->isLeaf()) right = right->leftChild();
+		while (!right->isLeaf()) {
+			right = right->leftChild();
+		}
 
 		// "x" is the intersection of two parabolas
 		const double x = parabolaIntersectionX(left->site(), right->site(), point.y());

@@ -51,7 +51,7 @@ namespace Voronoi
 
 	/// Retrun "x" coordinate of two parabola intersection.
 	/// We suppose the first parabola is on the left!
-	double parabolaIntersectionX(const Point & p, const Point & r, double y);
+	double parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double y);
 }
 
 

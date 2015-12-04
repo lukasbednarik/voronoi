@@ -61,6 +61,18 @@ std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, con
 
 std::unique_ptr<Voronoi::Point> Voronoi::Circumcenter(const Point & a, const Point & b, const Point & c)
 {
+	// This equation can be expressed in a simplified form after translation of the vertex A to the origin
+	// of the Cartesian coordinate systems. But in this case the equation would not be symetric
+	// (could be bad for numerical computations).
+	
+	auto norm2 = [] (const Point & p) -> double { return p.x() * p.x() + p.y() * p.y(); };
+	const double x = norm2(a) * (b.y() - c.y()) + norm2(b) * (c.y() - a.y()) + norm2(c) * (a.y() - b.y());
+	const double y = norm2(a) * (c.x() - b.x()) + norm2(b) * (a.x() - c.x()) + norm2(c) * (b.x() - a.x());
+	const double d = 2 * (a.x() * (b.y() - c.y()) + b.x() * (c.y() - a.y()) + c.x() * (a.y() - b.y()));
+	return make_unique<Point>(x / d, y / d);
+
+
+	/*
 	auto norm2 = [] (const Point & p) -> double { return p.x() * p.x() + p.y() * p.y(); };
 
 	// Translate "a" into origin
@@ -78,6 +90,7 @@ std::unique_ptr<Voronoi::Point> Voronoi::Circumcenter(const Point & a, const Poi
 	const double c_x = x / determinant + a.x();
 	const double c_y = y / determinant + a.y();
 	return make_unique<Point>(c_x, c_y);
+	*/
 }
 
 
@@ -107,8 +120,10 @@ double Voronoi::CircleRadius(const Point & center, const Point & x)
 }
 
 
-double Voronoi::parabolaIntersectionX(const Point & p, const Point & r, double y)
+double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double y)
 {
+	const Point p = leftParabola;
+	const Point r = rightParabola;
 	assert(p != r); // if true, then b1 != b2 which imply b != 0
 
 	// Coefficients of the first parabola

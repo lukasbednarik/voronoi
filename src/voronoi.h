@@ -41,13 +41,21 @@ namespace Voronoi
 	};
 
 
+	struct BoundingBox
+	{
+		BoundingBox() : MinX(0), MaxX(1), MinY(0), MaxY(1) {}
+		double MinX;
+		double MaxX;
+		double MinY;
+		double MaxY;
+	};
+
+
 	class Generator
 	{
 	public:
 		/// Calculate Voronoi diagram
-		///
-		/// @param sites Sites in the [0, 1] interval.
-		Generator(const std::vector<Point> & sites);
+		Generator(const std::vector<Point> & sites, const BoundingBox & boundingBox = BoundingBox());
 
 		/// Return all edges of Voronoi diagram
 		std::list<Edge> getEdges() const;
@@ -61,6 +69,9 @@ namespace Voronoi
 	private:
 		std::list<Edge> _edges;
 		Beachline _beachline;
+		BoundingBox _boundingBox;
+
+		/// Take high priority (big "y") events first
 		std::priority_queue<std::unique_ptr<Event>, std::vector<std::unique_ptr<Event>>, decltype(compareEvents)> _eventQueue;
 
 		void _generate();
