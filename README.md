@@ -1,5 +1,5 @@
 # Voronoi diagram generator
-Voronoi diagram generator with Steven Fortune's sweep line algorithm in C++11.
+*Voronoi diagram generator with Steven Fortune's sweep line algorithm in C++11.*
 
 The goal of this project is to provide elegant implementation of Steven Fortune's algorithm in modern C++11. The implementation is short, runs in `n log n` and uses a wide variety of C++11 and STL features. In time of this writting (2015) there are only a few implementations of this algorithm across the internet and all of them are written in "ugly" C-style C++. Moreover most of those implementations origin from the original Fortune's implementation in C.
 
