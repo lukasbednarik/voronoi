@@ -40,7 +40,7 @@ namespace Voronoi
 		Event(const Point & site);
 
 		/// Destructor
-		virtual ~Event();
+		virtual ~Event() {}
 
 		/// True if this is a site event, false if this is a vertex event
 		virtual bool isSiteEvent() const = 0;
@@ -60,20 +60,22 @@ namespace Voronoi
 	};
 
 
+	/// Simple site event triggered by input point
 	class SiteEvent : public Event
 	{
 	public:
 		SiteEvent(const Point & point);
-		~SiteEvent() override;
+		~SiteEvent() override {}
 		bool isSiteEvent() const override;
 	};
 
 
+	/// Generated vertex event at curcumcircle of three sites
 	class VertexEvent : public Event
 	{
 	public:
 		VertexEvent(const Point & point);
-		~VertexEvent() override;
+		~VertexEvent() override {}
 		bool isSiteEvent() const override;
 
 		/// Set parabola for this event
@@ -104,11 +106,6 @@ inline Voronoi::Event::Event(const Point & site) :
 }
 
 
-inline Voronoi::Event::~Event()
-{
-}
-
-
 inline bool Voronoi::Event::isDisabled() const
 {
 	return _isDisabled;
@@ -133,11 +130,6 @@ inline Voronoi::SiteEvent::SiteEvent(const Point & site) :
 }
 
 
-inline Voronoi::SiteEvent::~SiteEvent()
-{
-}
-
-
 inline bool Voronoi::SiteEvent::isSiteEvent() const
 {
 	return true;
@@ -147,11 +139,6 @@ inline bool Voronoi::SiteEvent::isSiteEvent() const
 inline Voronoi::VertexEvent::VertexEvent(const Point & site) :
 	Event(site),
 	_parabolaNode(nullptr)
-{
-}
-
-
-inline Voronoi::VertexEvent::~VertexEvent()
 {
 }
 

@@ -50,11 +50,8 @@ std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, con
 		return nullptr;
 	}
 	// Line segments intersect
-	// x = x_1 + factor1 * (x_2 - x_1) 
-	double y = y_1 + factor1 * (y_2 - y_1);
-	// y = y_1 + factor1 * (y_2 - y_1) 
 	double x = x_1 + factor1 * (x_2 - x_1);
-
+	double y = y_1 + factor1 * (y_2 - y_1);
 	return make_unique<Voronoi::Point>(x, y);
 }
 
@@ -62,35 +59,13 @@ std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, con
 std::unique_ptr<Voronoi::Point> Voronoi::Circumcenter(const Point & a, const Point & b, const Point & c)
 {
 	// This equation can be expressed in a simplified form after translation of the vertex A to the origin
-	// of the Cartesian coordinate systems. But in this case the equation would not be symetric
-	// (could be bad for numerical computations).
-	
+	// of the Cartesian coordinate systems. But in this case the equation isn't symetric
+	// (which could be bad for numerical computations).
 	auto norm2 = [] (const Point & p) -> double { return p.x() * p.x() + p.y() * p.y(); };
 	const double x = norm2(a) * (b.y() - c.y()) + norm2(b) * (c.y() - a.y()) + norm2(c) * (a.y() - b.y());
 	const double y = norm2(a) * (c.x() - b.x()) + norm2(b) * (a.x() - c.x()) + norm2(c) * (b.x() - a.x());
 	const double d = 2 * (a.x() * (b.y() - c.y()) + b.x() * (c.y() - a.y()) + c.x() * (a.y() - b.y()));
 	return make_unique<Point>(x / d, y / d);
-
-
-	/*
-	auto norm2 = [] (const Point & p) -> double { return p.x() * p.x() + p.y() * p.y(); };
-
-	// Translate "a" into origin
-	const Point beta = b - a;
-	const Point gamma = c - a;
-
-	// Compute x, y
-	const double determinant = 2 * (beta.x() * gamma.y() - gamma.x() * beta.y());
-	if (IsZeroAngle(determinant)) {
-		return nullptr;
-	}
-
-	const double x = gamma.y() * norm2(beta) - beta.y() * norm2(gamma);
-	const double y = beta.x() * norm2(gamma) - gamma.x() * norm2(beta);
-	const double c_x = x / determinant + a.x();
-	const double c_y = y / determinant + a.y();
-	return make_unique<Point>(c_x, c_y);
-	*/
 }
 
 
@@ -104,9 +79,9 @@ double Voronoi::CircumcircleRadius(const Point & a, const Point & b, const Point
 	const double g = norm(c - a);
 
 	// Use formula
-	const double s = (e + f + g) / 2;
+	const double s = (e + f + g) / 2.0;
 	double radius = e * f * g;
-	radius /= 4 * std::sqrt(s * (s - e) * (s - f) * (s - g));
+	radius /= 4.0 * std::sqrt(s * (s - e) * (s - f) * (s - g));
 	return radius;
 }
 
@@ -134,7 +109,7 @@ double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & 
 	const double c1 = y + dp1 / 4 + p.x() * p.x() / dp1;
 
 	// Coefficients of the second parabola
-	// a1 * x * x + b1 * x + c1 = 0
+	// a2 * x * x + b2 * x + c2 = 0
 	const double dp2 = 2.0 * (r.y() - y);
 	const double a2 = 1.0 / dp2;
 	const double b2 = -2.0 * r.x() / dp2;
@@ -169,10 +144,10 @@ double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & 
 
 double Voronoi::getParabolaY(Voronoi::Point focus, double directrix, double x)
 {
-	const double dp = 2 * (focus.y() - directrix);
-	const double a1 = 1 / dp;
-	const double b1 = -2 * focus.x() / dp;
-	const double c1 = directrix + dp / 4 + focus.x() * focus.x() / dp;
-	return a1 * x * x + b1 * x + c1;
+	const double dp = 2.0 * (focus.y() - directrix);
+	const double a = 1.0 / dp;
+	const double b = -2.0 * focus.x() / dp;
+	const double c = directrix + dp / 4.0 + focus.x() * focus.x() / dp;
+	return a * x * x + b * x + c;
 }
 

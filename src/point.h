@@ -41,7 +41,6 @@ namespace Voronoi
 		Point operator-(const Point & other) const;
 		bool operator==(const Point & other) const;
 		bool operator!=(const Point & other) const;
-		bool operator<(const Point & other) const;
 
 		template <typename T>
 		Point operator*(const T number) const;
@@ -117,17 +116,6 @@ inline bool Voronoi::Point::operator==(const Point & other) const
 inline bool Voronoi::Point::operator!=(const Point & other) const
 {
 	return !operator==(other);
-}
-
-
-inline bool Voronoi::Point::operator<(const Point & other) const
-{
-	if (_y != other._y) {
-		return _y < other._y;
-	}
-	else {
-		return _x < other._x;
-	}
 }
 
 

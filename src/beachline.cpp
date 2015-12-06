@@ -198,9 +198,7 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 	
 
 	// disable event including parabola->sites in the middle of a triple.    TODO: Is this correct? Are other events on neighbour parabolas intacted after move?
-	if (parabola->event()) {
-		parabola->setEvent(nullptr);
-	}
+	parabola->setEvent(nullptr);
 
 
 	// Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
@@ -248,23 +246,17 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 
 void Voronoi::Beachline::removeParabola(ParabolaNode * parabolaNode)
 {
-	if (!parabolaNode->isLeaf()) {
-		printf("DEBUG");
-	}
-
 	assert(parabolaNode->isLeaf());
 
 	// disable events
 	// Any event involving parabola->site should be deleted.          TODO: is this correct?
-	if (parabolaNode->_leftSibling && parabolaNode->_leftSibling->event()) {
+	if (parabolaNode->_leftSibling) {
 		parabolaNode->_leftSibling->setEvent(nullptr);
 	}
-	if (parabolaNode->_rightSibling && parabolaNode->_rightSibling->event()) {
+	if (parabolaNode->_rightSibling) {
 		parabolaNode->_rightSibling->setEvent(nullptr);
 	}
-	if (parabolaNode->event()) {
-		parabolaNode->setEvent(nullptr);
-	}
+	parabolaNode->setEvent(nullptr);
 
 
 	// Set siblings

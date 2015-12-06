@@ -41,8 +41,6 @@ namespace Voronoi
 		Point right() const;
 		void setBegin(const Point & begin);
 		void setEnd(const Point & end);
-		bool operator<(const Edge & other) const;
-		bool operator==(const Edge & other) const;
 
 		Edge * neighbour;  ///< some edges consist of two parts, so we add the pointer to another part to connect them at the end of an algorithm
 
@@ -98,23 +96,6 @@ inline void Voronoi::Edge::setBegin(const Point & begin)
 inline void Voronoi::Edge::setEnd(const Point & end)
 {
 	_end = end;
-}
-
-
-inline bool Voronoi::Edge::operator<(const Edge & other) const
-{
-	if (_begin != other._begin) {
-		return _begin < other._begin;
-	}
-	else {
-		return _end < other._end;
-	}
-}
-
-
-inline bool Voronoi::Edge::operator==(const Edge & other) const
-{
-	return _begin == other._begin && _end == other._end;
 }
 
 

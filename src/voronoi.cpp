@@ -23,8 +23,7 @@ double coefficientG(const Voronoi::Point & begin, const Voronoi::Point & end)
 
 
 Voronoi::Generator::Generator(const std::vector<Point> & sites, const BoundingBox & boundingBox) :
-	_boundingBox(boundingBox),
-	_eventQueue(compareEvents)
+	_boundingBox(boundingBox)
 {
 	// TODO: Odstranit sites ktere jsou mimo Max Min x y limity.
 
@@ -65,6 +64,8 @@ void Voronoi::Generator::_generate()
 		_eventQueue.pop();
 	}
 
+		/*
+
 	// Finish edges
 	const double minX = _boundingBox.MinX;
 	const double maxX = _boundingBox.MaxX;
@@ -73,7 +74,7 @@ void Voronoi::Generator::_generate()
 	const double offset = 10.0 * (maxY - minY);
 	assert(offset > 0);
 
-	/*
+
 	// Finish edges with no end
 	auto left = _beachline.root();
 	while (!left->isLeaf()) {
@@ -110,9 +111,7 @@ void Voronoi::Generator::_generate()
 		left->setEdgeEnd(Point(x, y));
 		left = left->rightSibling();
 	}
-	*/
 
-return;
 
 	// Connect neighbours
 	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
@@ -124,7 +123,6 @@ return;
 		}
 	}
 
-	/*
 	// Remove edges which are out of range
 	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
 		if (it->begin().x() < minX || it->begin().x() > maxX || it->begin().y() < minY || it->begin().y() > maxY) {
@@ -138,7 +136,6 @@ return;
 			continue;
 		}
 	}
-	*/
 	
 
 	// Posun konce ostatnich vrcholu
@@ -150,7 +147,6 @@ return;
 
 		const double f = coefficientF(it->begin(), end);
 		const double g = coefficientG(it->begin(), end);
-		/*
 		if (x < minX) {
 			x = minX;
 			y = f * x + g;
@@ -168,12 +164,11 @@ return;
 			y = maxY;
 			x = (y - g) / f;
 		}
-		*/
 
 		it->setEnd(Point(x, y));
 		
 	}
-
+	*/
 }
 
 
@@ -201,7 +196,7 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	auto event = make_unique<VertexEvent>(Point(circumcenter->x(), bottomCirclePoint));
 	event->setCircumcenter(*circumcenter);
 	event->setParabolaNode(parabola);
-	parabola->setEvent(event.get());        // TODO JENOM Kvuli tomuhle nemuze byt metoda konstantni. Pak nekonst i metody processEvent. Presunout to do Parabola nebo Event!
+	parabola->setEvent(event.get());
 	_eventQueue.push(std::move(event));
 }
 
@@ -212,9 +207,13 @@ void Voronoi::Generator::_processEvent(const SiteEvent * event)
 	auto left = newParabola->leftSibling();
 	auto right = newParabola->rightSibling();
 
-	if (!left && !right) {
+	// The `left` is superior to `right`. See note below.
+	if (!left) {
 		return;
 	}
+
+	// For simplicity we suppose the "left" always exists.
+	// This is ensured by our `Compare` functional.
 	assert(!right || left->site() == right->site());
 	const double sweepline = event->site().y();
 
@@ -260,14 +259,18 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 		left->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro prave pokracovani
 	}
 	else {
-		// Protahnout ke kraji??
+		// TODO Protahnout ke kraji??
+		//left->setEdgeEnd(Point(-1, -1));
+
+		// BUG Timto prepiseme existujici a spravnou hodnotu!!! Musime lepe promyslet vztah paraboly a edge, možna způsob "levá parabola" je špatně.
 	}
 
 	if (event->site().x() < right->site().x()) {
 		event->parabolaNode()->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro leve pokracovani
 	}
 	else {
-		// Protahnout ke kraji??
+		// TODO Protahnout ke kraji??
+		//left->setEdgeEnd(Point(-1, -1));
 	}
 
 
@@ -275,11 +278,12 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 	left->setEdge(nullptr);  // TODO Lze po odladeni smazat
 	event->parabolaNode()->setEdge(nullptr);  // TODO Lze po odladeni smazat
 	
-	// Remove this parabola
+	// Remove this parabola (this also disables events with this parabola's site]
 	_beachline.removeParabola(event->parabolaNode());
 	assert(left->site() != right->site()); // left and right parabolas can't have the same focus
 
 	if (sweepline < _boundingBox.MinY) {
+		// Don't generate another event if we are below MinY.
 		return;
 	}
 
