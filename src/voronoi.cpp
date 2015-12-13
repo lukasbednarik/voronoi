@@ -7,6 +7,8 @@
 
 namespace
 {
+const double Epsilon = 1e-10;
+
 /// y = f * x + g
 double coefficientF(const Voronoi::Point & begin, const Voronoi::Point & end)
 {
@@ -64,8 +66,44 @@ void Voronoi::Generator::_generate()
 		_eventQueue.pop();
 	}
 
-		/*
+	// Handle site events
+	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
+		auto neighbour = it->neighbour;
+		if (neighbour) {
+			const auto end = neighbour->end();
+			
+			if (end.x() == 0 && end.y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
+				if (neighbour->left().x() < neighbour->right().x()) {
+					// elongate upwards
 
+
+				}
+				else if (neighbour->left().x() > neighbour->right().x()) {
+					// elongate downwards
+				
+				}
+				else {  // equality
+					// elongate at equal y, but which way??? (decide on "y", because these left/right sites are switched too). Create new unit test.
+					
+				}
+
+
+
+
+			}
+			
+			
+			
+			
+			//neighbour->setBegin(it->end());
+			//_edges.erase(it--);
+		}
+	}
+
+
+
+
+	/*
 	// Finish edges
 	const double minX = _boundingBox.MinX;
 	const double maxX = _boundingBox.MaxX;
@@ -188,7 +226,7 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	}
 	auto radius = CircleRadius(*circumcenter, parabola->site());
 	const double bottomCirclePoint = circumcenter->y() - radius;
-	if (bottomCirclePoint >= sweepline) {
+	if (bottomCirclePoint > sweepline - Epsilon * sweepline) {
 		return;
 	}
 
@@ -270,7 +308,7 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 	}
 	else {
 		// TODO Protahnout ke kraji??
-		//left->setEdgeEnd(Point(-1, -1));
+		//event->parabolaNode()->setEdgeEnd(Point(-1, -1));
 	}
 
 
