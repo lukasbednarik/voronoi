@@ -6,9 +6,11 @@ The goal of this project is to provide elegant implementation of Steven Fortune'
 Steven Fortune's algorithm is elegant, but the implementation is very tricky as it requires to cover all corner cases which are hard to spot.
 
 ## Project files
-- Visual Studio 2015 solution is in the "test" directory.
-- Qt project is in src directory.
-- CMake file shall be done later.
+Unit test projects for VS 2015 and cmake are in "test" directory.
+
+- Visual Studio 2015: test and project file
+- cmake: test and project CMakeList.txt
+- Qt project: project file file in src directory
 
 ## Performance test
 
