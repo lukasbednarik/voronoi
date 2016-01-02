@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.1)
+project(Voronoi)
+file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp src/*.h)
+add_library(${PROJECT_NAME} ${SRC_LIST})
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
