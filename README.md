@@ -8,9 +8,9 @@ Steven Fortune's algorithm is elegant, but the implementation is very tricky as 
 ## Project files
 Unit test projects for VS 2015 and cmake are in "test" directory.
 
-- Visual Studio 2015: test and project file
-- cmake: test and project CMakeList.txt
-- Qt project: project file file in src directory
+- Visual Studio 2015: test and project file.
+- cmake: test and project CMakeList.txt.
+- Qt project: project file file in src directory.
 
 ## Performance test
 
