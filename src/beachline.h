@@ -111,7 +111,7 @@ namespace Voronoi
 		ParabolaNode * root();
 
 	private:
-		std::unique_ptr<ParabolaNode> _root;
+		std::unique_ptr<ParabolaNode> _root;  // TODO Delete this Beachline class!
 	};
 }
 

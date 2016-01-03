@@ -42,7 +42,7 @@ namespace Voronoi
 		void setBegin(const Point & begin);
 		void setEnd(const Point & end);
 
-		Edge * neighbour;  ///< some edges consist of two parts, so we add the pointer to another part to connect them at the end of an algorithm
+		Edge * twin;  ///< some edges consist of two parts, so we add the pointer to another part to connect them at the end of an algorithm
 
 	private:
 		Point _begin;  ///< Start of the edge
@@ -56,7 +56,7 @@ namespace Voronoi
 // Implementation
 
 inline Voronoi::Edge::Edge(const Point & left, const Point & right) :
-	neighbour(nullptr),
+	twin(nullptr),
 	_left(left),
 	_right(right)
 {

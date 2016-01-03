@@ -42,9 +42,6 @@ namespace Voronoi
 		/// Destructor
 		virtual ~Event() {}
 
-		/// True if this is a site event, false if this is a vertex event
-		virtual bool isSiteEvent() const = 0;
-
 		/// Return site associated with this event
 		Point site() const;
 
@@ -54,10 +51,16 @@ namespace Voronoi
 		/// Return true if this event should not be processed
 		bool isDisabled() const;
 
+		bool operator<(const Event & other) const;
+		bool operator>(const Event & other) const;
+
 	private:
 		bool _isDisabled;
 		Point _site;
 	};
+
+
+	inline bool operator>(const Event & left, const Event & right) { return left.operator>(right); }
 
 
 	/// Simple site event triggered by input point
@@ -66,7 +69,6 @@ namespace Voronoi
 	public:
 		SiteEvent(const Point & point);
 		~SiteEvent() override {}
-		bool isSiteEvent() const override;
 	};
 
 
@@ -76,7 +78,6 @@ namespace Voronoi
 	public:
 		VertexEvent(const Point & point);
 		~VertexEvent() override {}
-		bool isSiteEvent() const override;
 
 		/// Set parabola for this event
 		void setParabolaNode(ParabolaNode * parabolaNode);
@@ -124,15 +125,20 @@ inline Voronoi::Point Voronoi::Event::site() const
 }
 
 
-inline Voronoi::SiteEvent::SiteEvent(const Point & site) :
-	Event(site)
+inline bool Voronoi::Event::operator<(const Voronoi::Event & other) const
 {
+	return _site < other._site;
+}
+
+inline bool Voronoi::Event::operator>(const Event & other) const
+{
+	return _site > other._site;
 }
 
 
-inline bool Voronoi::SiteEvent::isSiteEvent() const
+inline Voronoi::SiteEvent::SiteEvent(const Point & site) :
+	Event(site)
 {
-	return true;
 }
 
 
@@ -152,12 +158,6 @@ inline void Voronoi::VertexEvent::setParabolaNode(ParabolaNode * parabolaNode)
 inline Voronoi::ParabolaNode * Voronoi::VertexEvent::parabolaNode()
 {
 	return _parabolaNode;
-}
-
-
-inline bool Voronoi::VertexEvent::isSiteEvent() const
-{
-	return false;
 }
 
 

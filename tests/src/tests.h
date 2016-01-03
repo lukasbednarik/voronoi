@@ -1,7 +1,7 @@
 #ifndef TESTS_H
 #define TESTS_H
 
-#include "voronoi.h"
+#include "Voronoi.h"
 #include "UnitTest++.h"
 #include <iostream>
 

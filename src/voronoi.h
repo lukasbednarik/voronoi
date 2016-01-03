@@ -64,37 +64,17 @@ namespace Voronoi
 		Beachline _beachline;
 		BoundingBox _boundingBox;
 
-		/// Custom comparator for priority queue
-		class Compare
-		{
-		public:
-			bool operator()(const std::unique_ptr<Event> & left, const std::unique_ptr<Event> & right);
-		};
-
 		/// Take high priority (big "y") events first
-		std::priority_queue<std::unique_ptr<Event>, std::vector<std::unique_ptr<Event>>, Compare> _eventQueue;
+		std::priority_queue<std::unique_ptr<VertexEvent>, std::vector<std::unique_ptr<VertexEvent>>> _vertexEventQueue;
+		std::vector<SiteEvent> _siteEventQueue;
+
+		// TODO: Možná optimalizace pro hodně vrcholů je použít sorted vector site eventů a queue vertex eventů. Vždy vybereme největší element.
 
 		void _generate();
 		void _processEvent(const SiteEvent * event);
 		void _processEvent(VertexEvent * event);
 		void _circleEvent(ParabolaNode * parabola, const double sweepline);
 	};
-}
-
-
-// Implementation
-
-inline bool Voronoi::Generator::Compare::operator()(const std::unique_ptr<Event> & left, const std::unique_ptr<Event> & right)
-{
-	if (left->site().y() == right->site().y()) {
-		// In this implementation the x-order is also important
-		// Note: The x-order is important in `ProcessSite()` event where
-		// some simplification is used based on this prerequisite.
-		return left->site().x() > right->site().x();
-	}
-	else {
-		return left->site().y() < right->site().y();
-	}
 }
 
 

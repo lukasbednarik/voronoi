@@ -1,7 +1,7 @@
 #include "tests.h"
 
 
-TEST(A_OneLine)
+TEST(A)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.7);
@@ -18,7 +18,7 @@ TEST(A_OneLine)
 }
 
 
-TEST(B_TwoLines_Nonintersecting)
+TEST(B)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.7);
@@ -35,7 +35,7 @@ TEST(B_TwoLines_Nonintersecting)
 }
 
 
-TEST(C_ThreeLines_OneVertexEvent)
+TEST(C)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.7);
@@ -52,8 +52,22 @@ TEST(C_ThreeLines_OneVertexEvent)
 }
 
 
+TEST(D)
+{
+	std::vector<Voronoi::Point> sites;
+	sites.emplace_back(0.2, 0.7);
+	sites.emplace_back(0.2, 0.2);
+	sites.emplace_back(0.4, 0.1);
+	sites.emplace_back(0.7, 0.7);
+
+	Voronoi::Generator generator(sites);
+	auto edges = generator.getEdges();
+	printEdges(edges, 'D');
+}
+
+
 // Test H -- same as C but mirrored on Y = 0.5
-TEST(H_ThreeLines_OneVertexEvent)
+TEST(H)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.3);
@@ -67,7 +81,7 @@ TEST(H_ThreeLines_OneVertexEvent)
 
 
 // Test I -- same as C but mirrored on X = 0.5
-TEST(I_ThreeLines_OneVertexEvent)
+TEST(I)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.8, 0.7);
@@ -80,7 +94,7 @@ TEST(I_ThreeLines_OneVertexEvent)
 }
 
 
-TEST(E_Test)
+TEST(E)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.7);
@@ -94,7 +108,7 @@ TEST(E_Test)
 }
 
 
-TEST(G_Test)
+TEST(G)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.8, 0.7);
@@ -108,7 +122,7 @@ TEST(G_Test)
 }
 
 
-TEST(F_Test)
+TEST(F)
 {
 	std::vector<Voronoi::Point> sites;
 	sites.emplace_back(0.2, 0.7);

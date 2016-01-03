@@ -197,11 +197,11 @@ Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
 	}
 	
 
-	// disable event including parabola->sites in the middle of a triple.    TODO: Is this correct? Are other events on neighbour parabolas intacted after move?
+	// disable event including parabola->sites in the middle of a triple.
 	parabola->setEvent(nullptr);
 
 
-	// Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
+	// TODO Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
 
 	if (site.x() < parabolaSite.x()) {
 		parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));

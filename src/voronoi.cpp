@@ -7,7 +7,14 @@
 
 namespace
 {
-const double Epsilon = 1e-10;
+const double Epsilon = 1e-12;
+
+/// Return true if Point is zero point
+bool isZero(const Voronoi::Point & point)
+{
+	return std::abs(point.x()) < Epsilon && std::abs(point.y()) < Epsilon;
+}
+
 
 /// y = f * x + g
 double coefficientF(const Voronoi::Point & begin, const Voronoi::Point & end)
@@ -17,9 +24,9 @@ double coefficientF(const Voronoi::Point & begin, const Voronoi::Point & end)
 
 
 /// y = f * x + g
-double coefficientG(const Voronoi::Point & begin, const Voronoi::Point & end)
+double coefficientG(const Voronoi::Point & begin, const double f)
 {
-	return begin.y() - coefficientF(begin, end) * begin.x();
+	return begin.y() - f * begin.x();
 }
 }  // end of anonymous namespace
 
@@ -27,11 +34,13 @@ double coefficientG(const Voronoi::Point & begin, const Voronoi::Point & end)
 Voronoi::Generator::Generator(const std::vector<Point> & sites, const BoundingBox & boundingBox) :
 	_boundingBox(boundingBox)
 {
-	// TODO: Odstranit sites ktere jsou mimo Max Min x y limity.
-
+	_siteEventQueue.reserve(sites.size());
 	for (const auto & site : sites) {
-		_eventQueue.push(make_unique<SiteEvent>(site));
+		if (site.x() > boundingBox.MinX && site.x() < boundingBox.MaxX && site.y() > boundingBox.MinY && site.y() < boundingBox.MaxY) {
+			_siteEventQueue.emplace_back(site);
+		}
 	}
+	std::sort(_siteEventQueue.begin(), _siteEventQueue.end(), &operator>);
 	_generate();
 }
 
@@ -42,83 +51,185 @@ std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 }
 
 
+// TODO: Musime umet zamenit Min / Max a vetsi/mesi pro přesahy.
+void Help(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBox)
+{
+	if (edge->end().x() == 0 && edge->end().y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
+
+		const double f = -1.0 / coefficientF(edge->left(), edge->right());
+		const double g = coefficientG(edge->begin(), f);
+
+		if (edge->left().y() == edge->right().y()) {  // f == inf
+			double x = edge->begin().x();
+			double y = boundingBox.MaxY;
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+		else if (f > 0) {
+			// elongate upwards
+			double x = boundingBox.MaxX;
+			double y = f * boundingBox.MaxX + g;
+			if (y > boundingBox.MaxY) {
+				y = boundingBox.MaxY;
+				x = (boundingBox.MaxY - g) / f;
+			}
+			edge->setEnd(Voronoi::Point(x, y));
+
+
+		}
+		else if (f < 0) {
+			// elongate downwards
+			double x = boundingBox.MaxX;
+			double y = f * boundingBox.MaxX + g;
+			if (y < boundingBox.MinY) {
+				y = boundingBox.MinY;
+				x = (boundingBox.MinY - g) / f;
+			}
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+		else {  // f == 0, left.x == right.x
+			double y = g;
+			double x = boundingBox.MinX;
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+
+	}
+}
+
+
+void HelpNeighbour(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBox)
+{
+	if (edge->end().x() == 0 && edge->end().y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
+		const double f = -1.0 / coefficientF(edge->left(), edge->right());
+		const double g = coefficientG(edge->begin(), f);
+
+
+		if (edge->left().y() == edge->right().y()) {  // f == inf
+			double x = edge->begin().x();
+			double y = boundingBox.MinY;
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+		else if (f > 0) {
+			// elongate upwards
+			double x = boundingBox.MinX;
+			double y = f * boundingBox.MinX + g;
+			if (y < boundingBox.MinY) {
+				y = boundingBox.MinY;
+				x = (boundingBox.MinY - g) / f;
+			}
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+		else if (f < 0) {
+			// elongate downwards
+			double x = boundingBox.MinX;
+			double y = f * boundingBox.MinX + g;
+			if (y > boundingBox.MaxY) {
+				y = boundingBox.MaxY;
+				x = (boundingBox.MaxY - g) / f;
+			}
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+		else {  // f == 0
+			double y = g;
+			double x = boundingBox.MaxX;
+			edge->setEnd(Voronoi::Point(x, y));
+		}
+
+
+	}
+}
+
+
 void Voronoi::Generator::_generate()
 {
-	while (!_eventQueue.empty()) {
-		auto event = _eventQueue.top().get();
+	auto siteIt = _siteEventQueue.begin();
+	while (!_vertexEventQueue.empty() || siteIt != _siteEventQueue.end()) {
+		if (!_vertexEventQueue.empty() && siteIt != _siteEventQueue.end()) {
+			auto vertexEvent = _vertexEventQueue.top().get();
+			if (vertexEvent->site() < siteIt->site()) {
+				_processEvent(&*siteIt);
+				++siteIt;
 
-		// Skip disabled event
-		if (event->isDisabled()) {
-			_eventQueue.pop();
-			continue;
+			}
+			else {
+				auto event = _vertexEventQueue.top().get();
+				if (!event->isDisabled()) {
+					_processEvent(event);
+				}
+				_vertexEventQueue.pop();
+			}
+
+		}
+		else if (!_vertexEventQueue.empty()) {
+			auto event = _vertexEventQueue.top().get();
+			if (!event->isDisabled()) {
+				_processEvent(event);
+			}
+			_vertexEventQueue.pop();
+		}
+		else {  // siteIt != _siteEventQueue.end()
+			_processEvent(&*siteIt);
+			++siteIt;
 		}
 
-		// Process events
-		if (event->isSiteEvent()) {
-			// Site event
-			_processEvent(static_cast<SiteEvent *>(event));
-		}
-		else {
-			// Vertex event
-			_processEvent(static_cast<VertexEvent *>(event));
-		}
 
-		_eventQueue.pop();
 	}
+
 
 	// Handle site events
 	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
-		auto neighbour = it->neighbour;
-		if (neighbour) {
-			const auto end = neighbour->end();
-			
-			if (end.x() == 0 && end.y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
-				if (neighbour->left().x() < neighbour->right().x()) {
-					// elongate upwards
-
-
-				}
-				else if (neighbour->left().x() > neighbour->right().x()) {
-					// elongate downwards
-				
-				}
-				else {  // equality
-					// elongate at equal y, but which way??? (decide on "y", because these left/right sites are switched too). Create new unit test.
-					
-				}
-
-
-
-
-			}
-			
-			
-			
-			
-			//neighbour->setBegin(it->end());
-			//_edges.erase(it--);
+		if (!it->twin) {  // Site events only
+			continue;
 		}
+
+		// TODO twin ma definovany jenom 1 edge ze 2. Mohl by to byt i vlastnici pointer.
+
+		Help(&*it, _boundingBox);
+		HelpNeighbour(it->twin, _boundingBox);
+
+
+
+		// TODO Vertex eventy - prodloužit a taky jsou tam nějake fake neexistujici.
+
+		// TODO Asi by stačilo projit jenom vertexy v Beachline a dokončit ji. To by ušetřilo nějaký čas.
+
+
+		// TODO Spojit site eventy do jednoho edge
+		//twin->setBegin(it->end());
+		//_edges.erase(it--);
 	}
 
+	// Remove degenerate vertices
+	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
+		if (isZero(it->begin() - it->end())) {
+			// Vertex event is never first in _edges, so this erase is correct.
+			_edges.erase(it--);
+		}
+	}
+	
+	// Remove duplicated edges
+	for (auto it = _edges.begin(); it != _edges.end();) {
+		auto first = *it;
+		++it;
+		if (it == _edges.end()) {
+			break;
+		}
 
+		const Point begin = it->begin() - first.begin();
+		const Point end = it->end() - first.end();
+		if (isZero(begin) && isZero(end)) {
+			// Vertex event is never first in _edges, so this erase is correct.
+			_edges.erase(it--);
+		}
+	}
+	
 
 
 	/*
-	// Finish edges
-	const double minX = _boundingBox.MinX;
-	const double maxX = _boundingBox.MaxX;
-	const double minY = _boundingBox.MinY;
-	const double maxY = _boundingBox.MaxY;
-	const double offset = 10.0 * (maxY - minY);
-	assert(offset > 0);
-
-
 	// Finish edges with no end
 	auto left = _beachline.root();
 	while (!left->isLeaf()) {
 		left = left->leftChild();
 	}
-
 	while (left->rightSibling()) {
 		// Every parabol has edge set. Each parabol's edge has no end
 		double x = parabolaIntersectionX(left->site(), left->rightSibling()->site(), minY - offset);
@@ -126,7 +237,6 @@ void Voronoi::Generator::_generate()
 		const Point end(x, y);
 		const double f = coefficientF(left->edge()->begin(), end);
 		const double g = coefficientG(left->edge()->begin(), end);
-
 		if (x < minX) {
 			x = minX;
 			y = f * x + g;
@@ -135,7 +245,6 @@ void Voronoi::Generator::_generate()
 			x = maxX;
 			y = f * x + g;
 		}
-
 		if (y < minY) {
 			y = minY;
 			x = (y - g) / f;
@@ -144,67 +253,18 @@ void Voronoi::Generator::_generate()
 			y = maxY;
 			x = (y - g) / f;
 		}
-
-
 		left->setEdgeEnd(Point(x, y));
 		left = left->rightSibling();
 	}
 
-
 	// Connect neighbours
 	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
-		auto neighbour = it->neighbour;
-		if (neighbour) {
-			// Connect two neighbour edges
-			neighbour->setBegin(it->end());
+		auto twin = it->twin;
+		if (twin) {
+			// Connect two twin edges
+			twin->setBegin(it->end());
 			_edges.erase(it--);
 		}
-	}
-
-	// Remove edges which are out of range
-	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
-		if (it->begin().x() < minX || it->begin().x() > maxX || it->begin().y() < minY || it->begin().y() > maxY) {
-			if (it == _edges.begin()) {
-				_edges.erase(it);
-				it = _edges.begin();
-			}
-			else {
-				_edges.erase(it--);
-			}
-			continue;
-		}
-	}
-	
-
-	// Posun konce ostatnich vrcholu
-	// !! Tohle jsou konce ktere byly pred Connect neighbours zacatky a proto nejsou upraveny!
-	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
-		const Point end = it->end();
-		double x = end.x();
-		double y = end.y();
-
-		const double f = coefficientF(it->begin(), end);
-		const double g = coefficientG(it->begin(), end);
-		if (x < minX) {
-			x = minX;
-			y = f * x + g;
-		}
-		else if (x > maxX) {
-			x = minX;
-			y = f * x + g;
-		}*/
-		/*
-		if (y < minY) {
-			y = minY;
-			x = (y - g) / f;
-		}
-		else if (y > maxY) {
-			y = maxY;
-			x = (y - g) / f;
-		}
-
-		it->setEnd(Point(x, y));
-		
 	}
 	*/
 }
@@ -226,7 +286,11 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	}
 	auto radius = CircleRadius(*circumcenter, parabola->site());
 	const double bottomCirclePoint = circumcenter->y() - radius;
-	if (bottomCirclePoint > sweepline - Epsilon * sweepline) {
+	if (bottomCirclePoint <= _boundingBox.MinY) {
+		// Don't generate another event if we are below MinY
+		return;
+	}
+	if (bottomCirclePoint > sweepline + Epsilon * sweepline) {
 		return;
 	}
 
@@ -235,7 +299,7 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	event->setCircumcenter(*circumcenter);
 	event->setParabolaNode(parabola);
 	parabola->setEvent(event.get());
-	_eventQueue.push(std::move(event));
+	_vertexEventQueue.push(std::move(event));
 }
 
 
@@ -267,9 +331,9 @@ void Voronoi::Generator::_processEvent(const SiteEvent * event)
 
 	left->setEdge(firstEdge);
 	newParabola->setEdge(secondEdge);
-	secondEdge->neighbour = firstEdge;
+	secondEdge->twin = firstEdge;
 
-	// TODO neighbour (co je right napravo) by mohl byt vlastnici pointer, pak ho stejne smazeme...
+	// TODO twin (co je right napravo) by mohl byt vlastnici pointer, pak ho stejne smazeme...
 
 	// Check fircle event
 	if (left) {
@@ -296,34 +360,14 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 	if (left->site().x() < event->site().x()) {
 		left->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro prave pokracovani
 	}
-	else {
-		// TODO Protahnout ke kraji??
-		//left->setEdgeEnd(Point(-1, -1));
 
-		// BUG Timto prepiseme existujici a spravnou hodnotu!!! Musime lepe promyslet vztah paraboly a edge, možna způsob "levá parabola" je špatně.
-	}
-
-	if (event->site().x() < right->site().x()) {
+	if (event->site().x() < right->site().x()) {  // TODO `<=` or `<` ?
 		event->parabolaNode()->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro leve pokracovani
 	}
-	else {
-		// TODO Protahnout ke kraji??
-		//event->parabolaNode()->setEdgeEnd(Point(-1, -1));
-	}
-
-
-
-	left->setEdge(nullptr);  // TODO Lze po odladeni smazat
-	event->parabolaNode()->setEdge(nullptr);  // TODO Lze po odladeni smazat
 	
 	// Remove this parabola (this also disables events with this parabola's site]
 	_beachline.removeParabola(event->parabolaNode());
 	assert(left->site() != right->site()); // left and right parabolas can't have the same focus
-
-	if (sweepline < _boundingBox.MinY) {
-		// Don't generate another event if we are below MinY.
-		return;
-	}
 
 	// Create a new (dangling) edge
 	_edges.emplace_back(left->site(), right->site());
