@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Lukáš Bednařík
+// Copyright (c) 2015 Lukáš Bednařík l.bednarik@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 #ifndef POINT_H
 #define POINT_H
 
+#include <cassert>
+
 
 namespace Voronoi
 {
@@ -33,6 +35,7 @@ namespace Voronoi
 	public:
 		Point();
 		Point(double x, double y);
+		bool isNull() const;
 		void setX(double x);
 		void setY(double y);
 		double x() const;
@@ -51,6 +54,7 @@ namespace Voronoi
 		Point operator/(const T number) const;
 
 	private:
+		bool _isNull;
 		double _x;
 		double _y;
 	};
@@ -60,16 +64,24 @@ namespace Voronoi
 // Implementation
 
 inline Voronoi::Point::Point() :
-_x(0),
+	_isNull(true),
+	_x(0),
 	_y(0)
 {
 }
 
 
 inline Voronoi::Point::Point(double x, double y) :
-_x(x),
+	_isNull(false),
+	_x(x),
 	_y(y)
 {
+}
+
+
+inline bool Voronoi::Point::isNull() const
+{
+	return _isNull;
 }
 
 
@@ -87,12 +99,14 @@ inline void Voronoi::Point::setY(double y)
 
 inline double Voronoi::Point::x() const
 {
+	assert(!_isNull);
 	return _x;
 }
 
 
 inline double Voronoi::Point::y() const
 {
+	assert(!_isNull);
 	return _y;
 }
 

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Lukáš Bednařík
+// Copyright (c) 2015 Lukáš Bednařík l.bednarik@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -31,19 +31,21 @@
 
 namespace Voronoi
 {
-	// POZN: Intersekce neni potreba pro generovani voronoi, ale bude potreba pozdeji.
-
 	/// Return an intersection of two edges or nullptr if no intersection
-	std::unique_ptr<Voronoi::Point> EdgeIntersection(const Edge & left, const Edge & right);
+	///
+	/// Return null point if no intersection exists.
+	Point edgeIntersection(const Edge & left, const Edge & right);
 
 	/// Circumcenter of three points
-	std::unique_ptr<Point> Circumcenter(const Point & a, const Point & b, const Point & c);
+	///
+	/// @return null point if no circumcenter exists.
+	Point circumcenter(const Point & a, const Point & b, const Point & c);
 
 	/// Circumcircle radius of three points
-	double CircumcircleRadius(const Point & a, const Point & b, const Point & c);
+	double circumcircleRadius(const Point & a, const Point & b, const Point & c);
 
 	/// Calculate circle radius given the center and one point on the circle
-	double CircleRadius(const Point & center, const Point & x);
+	double circleRadius(const Point & center, const Point & x);
 
 	/// Let's have a parabola defined by a focus and a directrix.
 	/// Find "y" value for given "x".
@@ -51,7 +53,12 @@ namespace Voronoi
 
 	/// Retrun "x" coordinate of two parabola intersection.
 	/// We suppose the first parabola is on the left!
-	double parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double y);
+	///
+	/// @param leftParabola Focus of left parabola.
+	/// @param rightParabola Focus of right parabola.
+	/// @param y Directrix of parabolas.
+	/// @return x coordinate of parabola intersection.
+	double parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double directrix);
 }
 
 

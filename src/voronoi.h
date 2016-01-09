@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Lukáš Bednařík
+// Copyright (c) 2015 Lukáš Bednařík l.bednarik@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -37,6 +37,7 @@ namespace Voronoi
 	struct BoundingBox
 	{
 		BoundingBox() : MinX(0), MaxX(1), MinY(0), MaxY(1) {}
+		BoundingBox(double minX, double maxX, double minY, double maxY);
 		double MinX;
 		double MaxX;
 		double MinY;
@@ -60,17 +61,23 @@ namespace Voronoi
 
 
 	private:
+		/// List of all found edges
 		std::list<Edge> _edges;
-		Beachline _beachline;
+
+		/// Beachline or also "borderline". This is root of beachline tree.
+		ParabolaNode _beachline;
+
+		/// Bounding box is input paramter
 		BoundingBox _boundingBox;
 
-		/// Take high priority (big "y") events first
+		/// Take high priority (big "y" coordinate) events first
 		std::priority_queue<std::unique_ptr<VertexEvent>, std::vector<std::unique_ptr<VertexEvent>>> _vertexEventQueue;
+
+		/// Queue of site events
 		std::vector<SiteEvent> _siteEventQueue;
 
-		// TODO: Možná optimalizace pro hodně vrcholů je použít sorted vector site eventů a queue vertex eventů. Vždy vybereme největší element.
-
 		void _generate();
+		void _postprocessing();
 		void _processEvent(const SiteEvent * event);
 		void _processEvent(VertexEvent * event);
 		void _circleEvent(ParabolaNode * parabola, const double sweepline);

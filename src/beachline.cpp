@@ -1,154 +1,51 @@
 #include "beachline.h"
 #include "geometry.h"
-#include "event.h"
 #include "make_unique.h"
-#include <cassert>
 #include <string>
+
+
+namespace
+{
+	/// Disable all event's containing parabola's site
+	void disableEvents(Voronoi::ParabolaNode * parabola)
+	{
+		if (parabola->leftSibling()) {
+			parabola->leftSibling()->setEvent(nullptr);
+		}
+		if (parabola->rightSibling()) {
+			parabola->rightSibling()->setEvent(nullptr);
+		}
+		parabola->setEvent(nullptr);
+	}
+}
 
 
 Voronoi::ParabolaNode::ParabolaNode() :
 	_parent(nullptr),
 	_leftSibling(nullptr),
-	_rightSibling(nullptr),
-	_event(nullptr),
-	_edge(nullptr)
+	_rightSibling(nullptr)
 {
 }
 
 
 Voronoi::ParabolaNode::ParabolaNode(const Point & site) :
-	_site(site),
+	Parabola(site),
 	_parent(nullptr),
 	_leftSibling(nullptr),
-	_rightSibling(nullptr),
-	_event(nullptr),
-	_edge(nullptr)
+	_rightSibling(nullptr)
 {
 }
 
 
-bool Voronoi::ParabolaNode::isLeaf() const
+void Voronoi::ParabolaNode::_createChildren(const Point & leftSite, const Point & rightSite)
 {
-	return !_leftChild && !_rightChild;
-}
-
-
-Voronoi::Point Voronoi::ParabolaNode::site() const
-{
-	return _site;
-}
-
-
-Voronoi::VertexEvent * Voronoi::ParabolaNode::event()
-{
-	return _event;
-}
-
-
-void Voronoi::ParabolaNode::setEvent(VertexEvent * event)
-{
-	if (_event) {
-		_event->disable();
-	}
-	_event = event;
-}
-
-
-void Voronoi::ParabolaNode::setEdge(Edge * edge)
-{
-	_edge = edge;
-}
-
-
-void Voronoi::ParabolaNode::setEdgeBegin(const Point & begin)
-{
-	_edge->setBegin(begin);
-}
-
-
-void Voronoi::ParabolaNode::setEdgeEnd(const Point & end)
-{
-	_edge->setEnd(end);
-}
-
-
-Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftSibling()
-{
-	return _leftSibling;
-}
-
-
-Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightSibling()
-{
-	return _rightSibling;
-}
-
-
-const Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftSibling() const
-{
-	return _leftSibling;
-}
-
-
-const Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightSibling() const
-{
-	return _rightSibling;
-}
-
-
-const Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftChild() const
-{
-	return _leftChild.get();
-}
-
-
-const Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightChild() const
-{
-	return _rightChild.get();
-}
-
-
-Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftChild()
-{
-	return _leftChild.get();
-}
-
-
-Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightChild()
-{
-	return _rightChild.get();
-}
-
-
-void Voronoi::ParabolaNode::setLeftChild(std::unique_ptr<ParabolaNode> parabolaTree)
-{
-	_leftChild = std::move(parabolaTree);
+	_leftChild = make_unique<ParabolaNode>(leftSite);
 	_leftChild->_parent = this;
-}
-
-
-void Voronoi::ParabolaNode::setRightChild(std::unique_ptr<ParabolaNode> parabolaTree)
-{
-	_rightChild = std::move(parabolaTree);
+	_rightChild = make_unique<ParabolaNode>(rightSite);
 	_rightChild->_parent = this;
-}
-
-
-std::unique_ptr<Voronoi::ParabolaNode> Voronoi::ParabolaNode::releaseLeftChild()
-{
-	auto child = std::move(_leftChild);
-	child->_parent = nullptr;
-	_leftChild.reset();
-	return child;
-}
-
-
-std::unique_ptr<Voronoi::ParabolaNode> Voronoi::ParabolaNode::releaseRightChild()
-{
-	auto child = std::move(_rightChild);
-	child->_parent = nullptr;
-	_rightChild.reset();
-	return child;
+	_cross(_leftSibling, leftChild());
+	_cross(leftChild(), rightChild());
+	_cross(rightChild(), _rightSibling);
 }
 
 
@@ -163,179 +60,160 @@ void Voronoi::ParabolaNode::_cross(ParabolaNode * left, ParabolaNode * right)
 }
 
 
-Voronoi::ParabolaNode * Voronoi::Beachline::emplaceParabola(const Point & site)
+std::unique_ptr<Voronoi::ParabolaNode> Voronoi::ParabolaNode::_releaseTwin(Voronoi::ParabolaNode * parabola)
 {
-	if (!_root) {
-		_root = make_unique<ParabolaNode>(site);
-		return _root.get();
+	Voronoi::ParabolaNode * parent = parabola->parent();
+	std::unique_ptr<Voronoi::ParabolaNode> otherBranch;
+	if (parent->leftChild() == parabola) {
+		otherBranch = std::move(parent->_rightChild);
+		parent->_rightChild.reset();
+	}
+	else if (parent->rightChild() == parabola) {
+		otherBranch = std::move(parent->_leftChild);
+		parent->_leftChild.reset();
+	}
+	else {
+		throw std::logic_error("_releaseTwin: Invalid parent!");
+	}
+	otherBranch->_parent = nullptr;
+	return otherBranch;
+}
+
+
+void Voronoi::ParabolaNode::_move(std::unique_ptr<ParabolaNode> parabola)
+{
+	_leftSibling = parabola->_leftSibling;
+	_rightSibling = parabola->_rightSibling;
+	_leftChild = std::move(parabola->_leftChild);
+	_rightChild = std::move(parabola->_rightChild);
+	setSite(parabola->site());
+	setEdge(parabola->edge());
+	setEvent(parabola->event());
+}
+
+
+void Voronoi::ParabolaNode::_setParentsTwin(ParabolaNode * parent, std::unique_ptr<ParabolaNode> parabola)
+{
+	auto grandparent = parent->parent();
+	parabola->_parent = grandparent;
+	if (grandparent->leftChild() == parent) {
+		grandparent->_leftChild = std::move(parabola);
+	}
+	else if (grandparent->rightChild() == parent) {
+		grandparent->_rightChild = std::move(parabola);
+	}
+	else {
+		throw std::logic_error("_setParentsTwin: Invalid parent!");
+	}
+}
+
+
+Voronoi::ParabolaNode * Voronoi::ParabolaNode::emplaceParabola(const Point & site)
+{
+	if (!isValid()) {
+		setSite(site);
+		return this;
 	}
 
 	ParabolaNode * parabola = findParabola(site);
-	const Point parabolaSite = parabola->site();
-	assert(parabolaSite.y() >= site.y());
-	assert(parabola->isLeaf());
-
-
-	// Handle special case when: one_parabola_in_root && parabolaSite.y() == site.y()
-	if (_root->isLeaf() && parabolaSite.y() == site.y()) {
-		if (site.x() < parabolaSite.x()) {
-			parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));
-			parabola->setLeftChild(make_unique<ParabolaNode>(site));
-
-			// Set siblings
-			ParabolaNode::_cross(parabola->_leftChild.get(), parabola->_rightChild.get());
-			return parabola->_leftChild.get();
-		}
-		else {
-			parabola->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
-			parabola->setRightChild(make_unique<ParabolaNode>(site));
-
-			// Set siblings
-			ParabolaNode::_cross(parabola->_leftChild.get(), parabola->_rightChild.get());
-			return parabola->_rightChild.get();
-		}
-	}
-	
+	assert(parabola->site().y() >= site.y());
 
 	// disable event including parabola->sites in the middle of a triple.
 	parabola->setEvent(nullptr);
 
-
-	// TODO Implementace je tragicka, pac musime kopirovat vsechny promenne paraboly (napr. edge) rucne. TODO TODO zlepsit.
-
-	if (site.x() < parabolaSite.x()) {
-		parabola->setRightChild(make_unique<ParabolaNode>(parabolaSite));
-		parabola->setLeftChild(make_unique<ParabolaNode>());
-		auto left = parabola->_leftChild.get();
-		left->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
-		left->setRightChild(make_unique<ParabolaNode>(site));
-
-		// Set siblings
-		ParabolaNode::_cross(parabola->_leftSibling, left->_leftChild.get());
-		ParabolaNode::_cross(left->_leftChild.get(), left->_rightChild.get());
-		ParabolaNode::_cross(left->_rightChild.get(), parabola->_rightChild.get());
-		ParabolaNode::_cross(parabola->_rightChild.get(), parabola->_rightSibling);
-
-		// Set edge to right sibling from the original parabola
-		parabola->_rightChild->setEdge(parabola->_edge);  // the rightmost parabola
-		parabola->setEdge(nullptr);
-
-		return left->_rightChild.get();
-	}
-	else {
-		parabola->setLeftChild(make_unique<ParabolaNode>(parabolaSite));
-		parabola->setRightChild(make_unique<ParabolaNode>());
-		auto right = parabola->_rightChild.get();
-		right->setRightChild(make_unique<ParabolaNode>(parabolaSite));
-		right->setLeftChild(make_unique<ParabolaNode>(site));
-
-		// Set siblings
-		ParabolaNode::_cross(parabola->_leftSibling, parabola->_leftChild.get());
-		ParabolaNode::_cross(parabola->_leftChild.get(), right->_leftChild.get());
-		ParabolaNode::_cross(right->_leftChild.get(), right->_rightChild.get());
-		ParabolaNode::_cross(right->_rightChild.get(), parabola->_rightSibling);
-
-		// Set edge to right sibling from the original parabola
-		right->_rightChild->setEdge(parabola->_edge);  // the rightmost parabola
-		parabola->setEdge(nullptr);
-
-		return right->_leftChild.get();
-	}
-}
-
-
-void Voronoi::Beachline::removeParabola(ParabolaNode * parabolaNode)
-{
-	assert(parabolaNode->isLeaf());
-
-	// disable events
-	// Any event involving parabola->site should be deleted.          TODO: is this correct?
-	if (parabolaNode->_leftSibling) {
-		parabolaNode->_leftSibling->setEvent(nullptr);
-	}
-	if (parabolaNode->_rightSibling) {
-		parabolaNode->_rightSibling->setEvent(nullptr);
-	}
-	parabolaNode->setEvent(nullptr);
-
-
-	// Set siblings
-	ParabolaNode::_cross(parabolaNode->_leftSibling, parabolaNode->_rightSibling);
-
-	// Find parent's another child
-	ParabolaNode * parent = parabolaNode->_parent;
-	std::unique_ptr<ParabolaNode> otherBranch;
-	if (parent->_leftChild.get() == parabolaNode) {
-		otherBranch = parent->releaseRightChild();
-	}
-	else if (parent->_rightChild.get() == parabolaNode) {
-		otherBranch = parent->releaseLeftChild();
-	}
-	else {
-		throw std::logic_error("Beachline::remove: Invalid parent!");
-	}
-
-	// Move parent's another child into parent's parent
-	ParabolaNode * grandparent = parent->_parent;
-	if (grandparent) {
-		if (grandparent->_leftChild.get() == parent) {
-			grandparent->setLeftChild(std::move(otherBranch));
-		}
-		else if (grandparent->_rightChild.get() == parent) {
-			grandparent->setRightChild(std::move(otherBranch));
+	// Handle special case when: one_parabola_in_root && parabolaSite.y() == site.y()
+	const Point parabolaSite = parabola->site();
+	if (isLeaf(this) && parabolaSite.y() == site.y()) {
+		if (site.x() < parabolaSite.x()) {
+			parabola->_createChildren(site, parabolaSite);
+			return parabola->leftChild();
 		}
 		else {
-			throw std::logic_error("Beachline::remove: Invalid parent!");
+			parabola->_createChildren(parabolaSite, site);
+			return parabola->rightChild();
 		}
 	}
+	else if (site.x() < parabolaSite.x()) {
+		// Create new parabola branch
+		parabola->_createChildren(Point(), parabolaSite);
+		parabola->leftChild()->_createChildren(parabolaSite, site);
+
+		// Set edge to right sibling from the original parabola
+		parabola->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		parabola->setEdge(nullptr);
+
+		return parabola->leftChild()->rightChild();
+	}
 	else {
-		_root = std::move(otherBranch);
+		// Create new parabola branch
+		parabola->_createChildren(parabolaSite, Point());
+		parabola->rightChild()->_createChildren(site, parabolaSite);
+
+		// Set edge to right sibling from the original parabola
+		parabola->rightChild()->_rightChild->setEdge(parabola->edge());  // the rightmost parabola
+		parabola->setEdge(nullptr);
+
+		return parabola->rightChild()->leftChild();
 	}
 }
 
 
-Voronoi::ParabolaNode * Voronoi::Beachline::findParabola(const Point & point)
+void Voronoi::ParabolaNode::removeParabola(ParabolaNode * parabola)
 {
-	if (!_root) {
-		return nullptr;
+	assert(isLeaf(parabola));
+
+	// Check if parabola is root
+	if (parabola == this) {
+		setInvalid();
 	}
 
-	ParabolaNode * parabola = _root.get();
+	// Any event involving parabolaNode->site() should be deleted.
+	disableEvents(parabola);
+
+	// Set siblings
+	ParabolaNode::_cross(parabola->_leftSibling, parabola->_rightSibling);
+
+	// Release parent's another child
+	auto otherBranch = _releaseTwin(parabola);
+
+	// Move parent's another child into parent's parent
+	if (parabola->parent()->parent()) {
+		_setParentsTwin(parabola->parent(), std::move(otherBranch));
+	}
+	else {
+		/// Make "otherBranch" to be "this"
+		_move(std::move(otherBranch));
+	}
+}
+
+
+Voronoi::ParabolaNode * Voronoi::ParabolaNode::findParabola(const Point & point)
+{
+	ParabolaNode * par = this;
 
 	// Binary search
-	while (!parabola->isLeaf()) {
+	while (!isLeaf(par)) {
 		// Find the closest leave which is on the left of current node
-		const ParabolaNode * left = parabola->leftChild();
-		while (!left->isLeaf()) {
+		const ParabolaNode * left = par->leftChild();
+		while (!isLeaf(left)) {
 			left = left->rightChild();
 		}
 
 		// Find the closest leave which is on the right of current node
-		const ParabolaNode * right = parabola->rightChild();
-		while (!right->isLeaf()) {
+		const ParabolaNode * right = par->rightChild();
+		while (!isLeaf(right)) {
 			right = right->leftChild();
 		}
 
 		// "x" is the intersection of two parabolas
 		const double x = parabolaIntersectionX(left->site(), right->site(), point.y());
 		if (x > point.x()) {
-			parabola = parabola->_leftChild.get();
+			par = par->_leftChild.get();
 		}
 		else {
-			parabola = parabola->_rightChild.get();
+			par = par->_rightChild.get();
 		}
 	}
-	return parabola;
+	return par;
 }
 
-
-const Voronoi::ParabolaNode * Voronoi::Beachline::root() const
-{
-	return _root.get();
-}
-
-
-Voronoi::ParabolaNode * Voronoi::Beachline::root()
-{
-	return _root.get();
-}

@@ -7,28 +7,37 @@
 
 namespace
 {
-const double Epsilon = 1e-12;
+	const double Epsilon = 1e-12;
 
-/// Return true if Point is zero point
-bool isZero(const Voronoi::Point & point)
-{
-	return std::abs(point.x()) < Epsilon && std::abs(point.y()) < Epsilon;
-}
-
-
-/// y = f * x + g
-double coefficientF(const Voronoi::Point & begin, const Voronoi::Point & end)
-{
-	return (end.y() - begin.y()) / (end.x() - begin.x());
-}
+	/// Return true if Point is zero point
+	bool isZero(const Voronoi::Point & point)
+	{
+		return std::abs(point.x()) < Epsilon && std::abs(point.y()) < Epsilon;
+	}
 
 
-/// y = f * x + g
-double coefficientG(const Voronoi::Point & begin, const double f)
-{
-	return begin.y() - f * begin.x();
-}
+	/// y = f * x + g
+	double coefficientF(const Voronoi::Point & begin, const Voronoi::Point & end)
+	{
+		return (end.y() - begin.y()) / (end.x() - begin.x());
+	}
+
+
+	/// y = f * x + g
+	double coefficientG(const Voronoi::Point & begin, const double f)
+	{
+		return begin.y() - f * begin.x();
+	}
 }  // end of anonymous namespace
+
+
+Voronoi::BoundingBox::BoundingBox(double minX, double maxX, double minY, double maxY) :
+	MinX(minX), MaxX(maxX), MinY(minY), MaxY(maxY)
+{
+	if (minX >= maxX || minY >= maxY) {
+		throw std::domain_error("Mix/Max coordinates overlat!");
+	}
+}
 
 
 Voronoi::Generator::Generator(const std::vector<Point> & sites, const BoundingBox & boundingBox) :
@@ -45,6 +54,42 @@ Voronoi::Generator::Generator(const std::vector<Point> & sites, const BoundingBo
 }
 
 
+void Voronoi::Generator::_generate()
+{
+	auto siteIt = _siteEventQueue.begin();
+	while (!_vertexEventQueue.empty() || siteIt != _siteEventQueue.end()) {
+		if (!_vertexEventQueue.empty() && siteIt != _siteEventQueue.end()) {
+			auto vertexEvent = _vertexEventQueue.top().get();
+			if (vertexEvent->site() < siteIt->site()) {
+				_processEvent(&*siteIt);
+				++siteIt;
+
+			}
+			else {
+				auto event = _vertexEventQueue.top().get();
+				if (!event->isDisabled()) {
+					_processEvent(event);
+				}
+				_vertexEventQueue.pop();
+			}
+
+		}
+		else if (!_vertexEventQueue.empty()) {
+			auto event = _vertexEventQueue.top().get();
+			if (!event->isDisabled()) {
+				_processEvent(event);
+			}
+			_vertexEventQueue.pop();
+		}
+		else {  // siteIt != _siteEventQueue.end()
+			_processEvent(&*siteIt);
+			++siteIt;
+		}
+	}
+	_postprocessing();
+}
+
+
 std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 {
 	return _edges;
@@ -54,7 +99,7 @@ std::list<Voronoi::Edge> Voronoi::Generator::getEdges() const
 // TODO: Musime umet zamenit Min / Max a vetsi/mesi pro přesahy.
 void Help(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBox)
 {
-	if (edge->end().x() == 0 && edge->end().y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
+	if (edge->end().isNull()) {
 
 		const double f = -1.0 / coefficientF(edge->left(), edge->right());
 		const double g = coefficientG(edge->begin(), f);
@@ -98,7 +143,7 @@ void Help(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBox)
 
 void HelpNeighbour(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBox)
 {
-	if (edge->end().x() == 0 && edge->end().y() == 0) {  // TODO !!!!! Vytvorit nejaky "not set" tag misto nuly!
+	if (edge->end().isNull()) {
 		const double f = -1.0 / coefficientF(edge->left(), edge->right());
 		const double g = coefficientG(edge->begin(), f);
 
@@ -139,42 +184,8 @@ void HelpNeighbour(Voronoi::Edge * edge, const Voronoi::BoundingBox & boundingBo
 }
 
 
-void Voronoi::Generator::_generate()
+void Voronoi::Generator::_postprocessing()
 {
-	auto siteIt = _siteEventQueue.begin();
-	while (!_vertexEventQueue.empty() || siteIt != _siteEventQueue.end()) {
-		if (!_vertexEventQueue.empty() && siteIt != _siteEventQueue.end()) {
-			auto vertexEvent = _vertexEventQueue.top().get();
-			if (vertexEvent->site() < siteIt->site()) {
-				_processEvent(&*siteIt);
-				++siteIt;
-
-			}
-			else {
-				auto event = _vertexEventQueue.top().get();
-				if (!event->isDisabled()) {
-					_processEvent(event);
-				}
-				_vertexEventQueue.pop();
-			}
-
-		}
-		else if (!_vertexEventQueue.empty()) {
-			auto event = _vertexEventQueue.top().get();
-			if (!event->isDisabled()) {
-				_processEvent(event);
-			}
-			_vertexEventQueue.pop();
-		}
-		else {  // siteIt != _siteEventQueue.end()
-			_processEvent(&*siteIt);
-			++siteIt;
-		}
-
-
-	}
-
-
 	// Handle site events
 	for (auto it = _edges.begin(); it != _edges.end(); ++it) {
 		if (!it->twin) {  // Site events only
@@ -221,40 +232,15 @@ void Voronoi::Generator::_generate()
 			_edges.erase(it--);
 		}
 	}
+
 	
-
-
-	/*
-	// Finish edges with no end
+	/*// Finish edges with no end
 	auto left = _beachline.root();
 	while (!left->isLeaf()) {
 		left = left->leftChild();
 	}
 	while (left->rightSibling()) {
-		// Every parabol has edge set. Each parabol's edge has no end
-		double x = parabolaIntersectionX(left->site(), left->rightSibling()->site(), minY - offset);
-		double y = getParabolaY(left->site(), minY - offset, x);
-		const Point end(x, y);
-		const double f = coefficientF(left->edge()->begin(), end);
-		const double g = coefficientG(left->edge()->begin(), end);
-		if (x < minX) {
-			x = minX;
-			y = f * x + g;
-		}
-		else if (x > maxX) {
-			x = maxX;
-			y = f * x + g;
-		}
-		if (y < minY) {
-			y = minY;
-			x = (y - g) / f;
-		}
-		else if (y > maxY) {
-			y = maxY;
-			x = (y - g) / f;
-		}
-		left->setEdgeEnd(Point(x, y));
-		left = left->rightSibling();
+		...
 	}
 
 	// Connect neighbours
@@ -265,8 +251,7 @@ void Voronoi::Generator::_generate()
 			twin->setBegin(it->end());
 			_edges.erase(it--);
 		}
-	}
-	*/
+	}*/
 }
 
 
@@ -280,12 +265,12 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	}
 
 	// Check if the bottom point of the circumcircle lies under the sweepline
-	auto circumcenter = Circumcenter(left->site(), parabola->site(), right->site());
-	if (!circumcenter) {
+	auto center = circumcenter(left->site(), parabola->site(), right->site());
+	if (center.isNull()) {
 		return;
 	}
-	auto radius = CircleRadius(*circumcenter, parabola->site());
-	const double bottomCirclePoint = circumcenter->y() - radius;
+	auto radius = circleRadius(center, parabola->site());
+	const double bottomCirclePoint = center.y() - radius;
 	if (bottomCirclePoint <= _boundingBox.MinY) {
 		// Don't generate another event if we are below MinY
 		return;
@@ -295,8 +280,8 @@ void Voronoi::Generator::_circleEvent(ParabolaNode * parabola, const double swee
 	}
 
 	// Create Vertex event
-	auto event = make_unique<VertexEvent>(Point(circumcenter->x(), bottomCirclePoint));
-	event->setCircumcenter(*circumcenter);
+	auto event = make_unique<VertexEvent>(Point(center.x(), bottomCirclePoint));
+	event->setCircumcenter(center);
 	event->setParabolaNode(parabola);
 	parabola->setEvent(event.get());
 	_vertexEventQueue.push(std::move(event));
@@ -333,7 +318,7 @@ void Voronoi::Generator::_processEvent(const SiteEvent * event)
 	newParabola->setEdge(secondEdge);
 	secondEdge->twin = firstEdge;
 
-	// TODO twin (co je right napravo) by mohl byt vlastnici pointer, pak ho stejne smazeme...
+	/// @TODO twin (co je right napravo) by mohl byt vlastnici pointer, pak ho stejne smazeme...
 
 	// Check fircle event
 	if (left) {
@@ -358,11 +343,11 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 
 	// Finish two edges
 	if (left->site().x() < event->site().x()) {
-		left->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro prave pokracovani
+		left->edge()->setEnd(event->circumcenter());  // nastavujeme konec pro prave pokracovani
 	}
 
 	if (event->site().x() < right->site().x()) {  // TODO `<=` or `<` ?
-		event->parabolaNode()->setEdgeEnd(event->circumcenter());  // nastavujeme konec pro leve pokracovani
+		event->parabolaNode()->edge()->setEnd(event->circumcenter());  // nastavujeme konec pro leve pokracovani
 	}
 	
 	// Remove this parabola (this also disables events with this parabola's site]
@@ -372,7 +357,7 @@ void Voronoi::Generator::_processEvent(VertexEvent * event)
 	// Create a new (dangling) edge
 	_edges.emplace_back(left->site(), right->site());
 	left->setEdge(&_edges.back());
-	left->setEdgeBegin(event->circumcenter());
+	left->edge()->setBegin(event->circumcenter());
 
 	_circleEvent(left, sweepline);
 	_circleEvent(right, sweepline);

@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Lukáš Bednařík
+// Copyright (c) 2015 Lukáš Bednařík l.bednarik@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,77 +25,72 @@
 #define PARABOLATREE_H
 
 #include "point.h"
+#include "event.h"
+#include "edge.h"
 #include <memory>
+#include <cassert>
 
 
 namespace Voronoi
 {
-	class VertexEvent;
-	class Edge;
-
-
-	/// One parabola node in a tree
-	class ParabolaNode
+	class Parabola
 	{
 	public:
-		/// Default constructor
-		ParabolaNode();
-
 		/// Constructor
-		ParabolaNode(const Point & site);
+		Parabola();
 
-		/// Return true if this is a leaf.
-		bool isLeaf() const;
+		/// Convenience constructor
+		Parabola(const Point & site);
+
+		/// Destructor
+		virtual ~Parabola() {}
+
+		/// Return true if this Parabola is invalid (no site set)
+		bool isValid() const;
+
+		/// Set this parabola to be empty (invalid)
+		void setInvalid();
 
 		/// The parabola focus. Value is valid only for leafs.
 		Point site() const;
 
-		/// Return event for this node
+		void setSite(const Point & site);
+
+		/// Return edge
+		Edge * edge();
+
+		/// Set edge
+		void setEdge(Edge * edge);
+
+		/// Return event for this parabola
 		VertexEvent * event();
 
-		/// Set an event for this node
+		/// Set an event for this parabola
 		void setEvent(VertexEvent * event);
 
-		void setEdge(Edge * edge);
-		void setEdgeBegin(const Point & begin);
-		void setEdgeEnd(const Point & end);
-		const Edge * edge() const { return _edge; }  // TODO This is for debug only.
-
-		ParabolaNode * leftSibling();
-		ParabolaNode * rightSibling();
-		const ParabolaNode * leftSibling() const;
-		const ParabolaNode * rightSibling() const;
-		const ParabolaNode * leftChild() const;
-		const ParabolaNode * rightChild() const;  // FOR DEBUG. WE WANT better implementation!
-		ParabolaNode * leftChild();
-		ParabolaNode * rightChild();  // FOR DEBUG. WE WANT better implementation!
-
 	private:
-		friend class Beachline;
-
 		Point _site;
-		ParabolaNode * _parent;
-		ParabolaNode * _leftSibling;
-		ParabolaNode * _rightSibling;
-		std::unique_ptr<ParabolaNode> _leftChild;
-		std::unique_ptr<ParabolaNode> _rightChild;
-		VertexEvent * _event;
 		Edge * _edge;
-
-		// Helper functions
-		void setLeftChild(std::unique_ptr<ParabolaNode> parabolaTree);
-		void setRightChild(std::unique_ptr<ParabolaNode> parabolaTree);
-		std::unique_ptr<ParabolaNode> releaseLeftChild();
-		std::unique_ptr<ParabolaNode> releaseRightChild();
-		static void _cross(ParabolaNode * left, ParabolaNode * right);
+		VertexEvent * _event;
 	};
 
 
-	/// Beachline creates the "beachline" (or also "borderline").
-	class Beachline
+	/// One parabola node in a tree
+	///
+	/// We suppose ParabolaNode having both children or none!
+	class ParabolaNode : public Parabola
 	{
 	public:
-		/// Construct a parabola (child) on beachline
+		/// Constructor
+		ParabolaNode();
+
+		/// Convenience constructor
+		ParabolaNode(const Point & site);
+
+		/// Destructor
+		~ParabolaNode() override {}
+
+		/// Construct a parabola child
 		///
 		/// @return New created parabola.
 		ParabolaNode * emplaceParabola(const Point & site);
@@ -105,14 +100,178 @@ namespace Voronoi
 
 		/// Return a parabola under the given point [x, sweepline_y].
 		ParabolaNode * findParabola(const Point & point);
-
-		/// Get root
-		const ParabolaNode * root() const;
-		ParabolaNode * root();
+		
+		/// Family functions
+		ParabolaNode * parent();
+		const ParabolaNode * parent() const;
+		ParabolaNode * leftSibling();
+		ParabolaNode * rightSibling();
+		const ParabolaNode * leftSibling() const;
+		const ParabolaNode * rightSibling() const;
+		ParabolaNode * leftChild();
+		ParabolaNode * rightChild();
+		const ParabolaNode * leftChild() const;
+		const ParabolaNode * rightChild() const;
 
 	private:
-		std::unique_ptr<ParabolaNode> _root;  // TODO Delete this Beachline class!
+		ParabolaNode * _parent;
+		ParabolaNode * _leftSibling;
+		ParabolaNode * _rightSibling;
+		std::unique_ptr<ParabolaNode> _leftChild;
+		std::unique_ptr<ParabolaNode> _rightChild;
+
+		// Helper functions
+		void _createChildren(const Point & leftSite, const Point & rightSite);
+		void _move(std::unique_ptr<ParabolaNode> parabola);  ///< Copy everything from parabola to this
+		static std::unique_ptr<ParabolaNode> _releaseTwin(ParabolaNode * parabola);  ///< Find parent's another child and release it
+		static void _setParentsTwin(ParabolaNode * parent, std::unique_ptr<ParabolaNode> parabola);
+		static void _cross(ParabolaNode * left, ParabolaNode * right);
 	};
+
+
+	/// Convenience function. Return true if ParabolaNode is a leaf.
+	///
+	/// We suppose ParabolaNode having both children or none!
+	bool isLeaf(const ParabolaNode * parabolaNode);
+}
+
+
+
+// Implementation
+
+inline Voronoi::Parabola::Parabola() :
+	_edge(nullptr),
+	_event(nullptr)
+{
+}
+
+
+inline Voronoi::Parabola::Parabola(const Point & site) :
+	_site(site),
+	_edge(nullptr),
+	_event(nullptr)
+{
+}
+
+
+inline void Voronoi::Parabola::setInvalid()
+{
+	_site = Point();
+}
+
+
+inline bool Voronoi::Parabola::isValid() const
+{
+	return !_site.isNull();
+}
+
+
+inline Voronoi::Point Voronoi::Parabola::site() const
+{
+	return _site;
+}
+
+
+inline void Voronoi::Parabola::setSite(const Point & site)
+{
+	_site = site;
+}
+
+
+inline Voronoi::Edge * Voronoi::Parabola::edge()
+{
+	return _edge;
+}
+
+
+inline void Voronoi::Parabola::setEdge(Edge * edge)
+{
+	_edge = edge;
+}
+
+
+inline Voronoi::VertexEvent * Voronoi::Parabola::event()
+{
+	return _event;
+}
+
+
+inline void Voronoi::Parabola::setEvent(VertexEvent * event)
+{
+	if (_event) {
+		_event->disable();
+	}
+	_event = event;
+}
+
+
+inline Voronoi::ParabolaNode * Voronoi::ParabolaNode::parent()
+{
+	return _parent;
+}
+
+
+inline const Voronoi::ParabolaNode * Voronoi::ParabolaNode::parent() const
+{
+	return _parent;
+}
+
+
+inline Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftSibling()
+{
+	assert(isLeaf(this));
+	return _leftSibling;
+}
+
+
+inline Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightSibling()
+{
+	assert(isLeaf(this));
+	return _rightSibling;
+}
+
+
+inline const Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftSibling() const
+{
+	assert(isLeaf(this));
+	return _leftSibling;
+}
+
+
+inline const Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightSibling() const
+{
+	assert(isLeaf(this));
+	return _rightSibling;
+}
+
+
+inline const Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftChild() const
+{
+	return _leftChild.get();
+}
+
+
+inline const Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightChild() const
+{
+	return _rightChild.get();
+}
+
+
+inline Voronoi::ParabolaNode * Voronoi::ParabolaNode::leftChild()
+{
+	return _leftChild.get();
+}
+
+
+inline Voronoi::ParabolaNode * Voronoi::ParabolaNode::rightChild()
+{
+	return _rightChild.get();
+}
+
+
+inline bool Voronoi::isLeaf(const ParabolaNode * parabolaNode)
+{
+	return !parabolaNode->leftChild() && !parabolaNode->rightChild();
 }
 
 

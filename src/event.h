@@ -1,6 +1,6 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2015 Lukáš Bednařík
+// Copyright (c) 2015 Lukáš Bednařík l.bednarik@gmail.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,52 +32,25 @@ namespace Voronoi
 	class ParabolaNode;
 
 
-	/// General event interface
-	class Event
+	/// Simple site event triggered by input point
+	class SiteEvent
 	{
 	public:
-		/// Constructor
-		Event(const Point & site);
-
-		/// Destructor
-		virtual ~Event() {}
-
-		/// Return site associated with this event
+		SiteEvent(const Point & site);
+		bool operator>(const SiteEvent & other) const;
 		Point site() const;
-
-		/// Disable this event
-		void disable();
-
-		/// Return true if this event should not be processed
-		bool isDisabled() const;
-
-		bool operator<(const Event & other) const;
-		bool operator>(const Event & other) const;
-
 	private:
-		bool _isDisabled;
 		Point _site;
 	};
 
 
-	inline bool operator>(const Event & left, const Event & right) { return left.operator>(right); }
-
-
-	/// Simple site event triggered by input point
-	class SiteEvent : public Event
-	{
-	public:
-		SiteEvent(const Point & point);
-		~SiteEvent() override {}
-	};
-
-
 	/// Generated vertex event at curcumcircle of three sites
-	class VertexEvent : public Event
+	class VertexEvent
 	{
 	public:
-		VertexEvent(const Point & point);
-		~VertexEvent() override {}
+		VertexEvent(const Point & site);
+
+		Point site() const;
 
 		/// Set parabola for this event
 		void setParabolaNode(ParabolaNode * parabolaNode);
@@ -91,61 +64,66 @@ namespace Voronoi
 		/// Get circumcenter for this vertex event
 		Point circumcenter() const;
 
+		/// Disable this event
+		void disable();
+
+		/// Return true if this event should not be processed
+		bool isDisabled() const;
+
 	private:
+		Point _site;
+		bool _isDisabled;
 		ParabolaNode * _parabolaNode;
 		Point _circumcenter;
 	};
+
+
+	inline bool operator>(const SiteEvent & left, const SiteEvent & right) { return left.operator>(right); }
 }
 
 
 // Implementation
-
-inline Voronoi::Event::Event(const Point & site) :
-	_isDisabled(false),
+inline Voronoi::SiteEvent::SiteEvent(const Point & site) :
 	_site(site)
 {
 }
 
 
-inline bool Voronoi::Event::isDisabled() const
-{
-	return _isDisabled;
-}
-
-
-inline void Voronoi::Event::disable()
-{
-	_isDisabled = true;
-}
-
-
-inline Voronoi::Point Voronoi::Event::site() const
-{
-	return _site;
-}
-
-
-inline bool Voronoi::Event::operator<(const Voronoi::Event & other) const
-{
-	return _site < other._site;
-}
-
-inline bool Voronoi::Event::operator>(const Event & other) const
+inline bool Voronoi::SiteEvent::operator>(const SiteEvent & other) const
 {
 	return _site > other._site;
 }
 
 
-inline Voronoi::SiteEvent::SiteEvent(const Point & site) :
-	Event(site)
+inline Voronoi::Point Voronoi::SiteEvent::site() const
 {
+	return _site;
 }
 
 
 inline Voronoi::VertexEvent::VertexEvent(const Point & site) :
-	Event(site),
-	_parabolaNode(nullptr)
+	_site(site),
+	_parabolaNode(nullptr),
+	_isDisabled(false)
 {
+}
+
+
+inline Voronoi::Point Voronoi::VertexEvent::site() const
+{
+	return _site;
+}
+
+
+inline bool Voronoi::VertexEvent::isDisabled() const
+{
+	return _isDisabled;
+}
+
+
+inline void Voronoi::VertexEvent::disable()
+{
+	_isDisabled = true;
 }
 
 

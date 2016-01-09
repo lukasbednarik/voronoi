@@ -7,17 +7,17 @@
 
 namespace
 {
-const double EpsilonRad = 1e-10;
+	const double EpsilonRad = 1e-10;
 
-/// Return true if a given angle in rad is zero
-inline bool IsZeroAngle(double angle)
-{
-	return angle < EpsilonRad && -angle < EpsilonRad;
+	/// Return true if a given angle in rad is zero
+	inline bool isZeroAngle(double angle)
+	{
+		return angle < EpsilonRad && -angle < EpsilonRad;
+	}
 }
-}
 
 
-std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, const Edge & right)
+Voronoi::Point Voronoi::edgeIntersection(const Edge & left, const Edge & right)
 {
 	// Suppose we have lines given by {(x_1, y_1), (x_2, y_2)} and {(x_3, y_3), (x_4, y_4)}.
 	const double x_1 = left.begin().x();
@@ -33,43 +33,48 @@ std::unique_ptr<Voronoi::Point> Voronoi::EdgeIntersection(const Edge & left, con
 	const double numerator1 = (x_4 - x_3) * (y_1 - y_3) - (y_4 - y_3) * (x_1 - x_3);
 	const double numerator2 = (x_2 - x_1) * (y_1 - y_3) - (y_2 - y_1) * (x_1 - x_3);
 
-	if (IsZeroAngle(denominator) && IsZeroAngle(numerator1) &&
-			IsZeroAngle(numerator2)) {
+	if (isZeroAngle(denominator) && isZeroAngle(numerator1) &&
+			isZeroAngle(numerator2)) {
 		// The two lines are coincidents
-		return nullptr;
+		return Point();
 	}
-	if (IsZeroAngle(denominator)) {
+	if (isZeroAngle(denominator)) {
 		// The line segments are parallel
-		return nullptr;
+		return Point();
 	}
 	double factor1 = numerator1 / denominator;
 	double factor2 = numerator2 / denominator;
 	if (factor1 < 0.0 || factor1 > 1.0 || factor2 < 0.0 || factor2 > 1.0) {
 		// The intersection is outside the line segments, line segments don't collide
 		// Note: We need to check both factors here!
-		return nullptr;
+		return Point();
 	}
 	// Line segments intersect
 	double x = x_1 + factor1 * (x_2 - x_1);
 	double y = y_1 + factor1 * (y_2 - y_1);
-	return make_unique<Voronoi::Point>(x, y);
+	return Point(x, y);
 }
 
 
-std::unique_ptr<Voronoi::Point> Voronoi::Circumcenter(const Point & a, const Point & b, const Point & c)
+Voronoi::Point Voronoi::circumcenter(const Point & a, const Point & b, const Point & c)
 {
 	// This equation can be expressed in a simplified form after translation of the vertex A to the origin
-	// of the Cartesian coordinate systems. But in this case the equation isn't symetric
-	// (which could be bad for numerical computations).
+	// of the Cartesian coordinate systems. But in that case the equation wouldn't be symetric
+	// (which is be bad for numerical computations).
 	auto norm2 = [] (const Point & p) -> double { return p.x() * p.x() + p.y() * p.y(); };
 	const double x = norm2(a) * (b.y() - c.y()) + norm2(b) * (c.y() - a.y()) + norm2(c) * (a.y() - b.y());
 	const double y = norm2(a) * (c.x() - b.x()) + norm2(b) * (a.x() - c.x()) + norm2(c) * (b.x() - a.x());
 	const double d = 2 * (a.x() * (b.y() - c.y()) + b.x() * (c.y() - a.y()) + c.x() * (a.y() - b.y()));
-	return make_unique<Point>(x / d, y / d);
+	if (isZeroAngle(d)) {
+		return Point();
+	}
+	else {
+		return Point(x / d, y / d);
+	}
 }
 
 
-double Voronoi::CircumcircleRadius(const Point & a, const Point & b, const Point & c)
+double Voronoi::circumcircleRadius(const Point & a, const Point & b, const Point & c)
 {
 	auto norm = [] (const Point & p) -> double { return std::sqrt(p.x() * p.x() + p.y() * p.y()); };
 
@@ -77,29 +82,38 @@ double Voronoi::CircumcircleRadius(const Point & a, const Point & b, const Point
 	const double e = norm(a - b);
 	const double f = norm(b - c);
 	const double g = norm(c - a);
+	const double s = (e + f + g) / 2.0;
+
+	// Compute divisor
+	const double d = std::sqrt(s * (s - e) * (s - f) * (s - g));
 
 	// Use formula
-	const double s = (e + f + g) / 2.0;
-	double radius = e * f * g;
-	radius /= 4.0 * std::sqrt(s * (s - e) * (s - f) * (s - g));
-	return radius;
+	if (isZeroAngle(d)) {
+		return 0;
+	}
+	else {
+		return e * f * g / 4.0 / d;
+	}
 }
 
 
-double Voronoi::CircleRadius(const Point & center, const Point & x)
+double Voronoi::circleRadius(const Point & center, const Point & x)
 {
 	const double dx = center.x() - x.x();
 	const double dy = center.y() - x.y();
-
 	return std::sqrt(dx * dx + dy * dy);
 }
 
 
-double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double y)
+double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & rightParabola, double directrix)
 {
-	const Point p = leftParabola;
-	const Point r = rightParabola;
-	assert(p != r); // if true, then b1 != b2 which imply b != 0
+	const Point & p = leftParabola;
+	const Point & r = rightParabola;
+	const double & y = directrix;
+	const Point diff = p - r;
+	assert(!isZeroAngle(diff.x()) || !isZeroAngle(diff.y()));
+	assert(!isZeroAngle(r.y() - y));  // We suppose parabola is not degenerate
+	assert(!isZeroAngle(p.y() - y));  // We suppose parabola is not degenerate
 
 	// Coefficients of the first parabola
 	// a1 * x * x + b1 * x + c1 = 0
@@ -120,14 +134,15 @@ double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & 
 	const double b = b1 - b2;
 	const double c = c1 - c2;
 
-	// Degenerate cast
-	if (a == 0) {
+	// Degenerate case when foci of parabolas have the same `y` coordinate.
+	if (isZeroAngle(a)) {
 		return -c / b;
 	}
 
 	// Solve a quadratic equation when the difference of two parabolas is zero.
 	// This is when the two parabolas intersects.
 	const double disc = b*b - 4 * a * c;
+	assert(disc >= 0);  // We suppose parabolas intersect
 	const double x1 = (-b + std::sqrt(disc)) / (2*a);
 	const double x2 = (-b - std::sqrt(disc)) / (2*a);
 
@@ -138,13 +153,17 @@ double Voronoi::parabolaIntersectionX(const Point & leftParabola, const Point & 
 	}
 	else {
 		return std::min(x1, x2);
-	}
+	}	
 }
 
 
 double Voronoi::getParabolaY(Voronoi::Point focus, double directrix, double x)
 {
 	const double dp = 2.0 * (focus.y() - directrix);
+	if (isZeroAngle(dp)) {
+		// Degenerated parabola is a line
+		return directrix;
+	}
 	const double a = 1.0 / dp;
 	const double b = -2.0 * focus.x() / dp;
 	const double c = directrix + dp / 4.0 + focus.x() * focus.x() / dp;

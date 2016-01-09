@@ -158,8 +158,11 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\beachlineTest.cpp" />
+    <ClCompile Include="src\geometryTest.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\simpleDiagrams.cpp" />
+    <ClCompile Include="src\tests.cpp" />
+    <ClCompile Include="src\voronoiTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tests.h" />
